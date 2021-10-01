@@ -33,6 +33,7 @@
     "not op_mini all"
   ],
   "devDependencies": {
+    "@types/leaflet": "^1.7.5",
     "prettier": "^2.4.1"
   }
 }

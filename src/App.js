@@ -5,7 +5,8 @@ import { firebase } from "./initFirebase";
 import { useAuth } from "./context/AuthContext";
 import SignIn from "./pages/SignIn";
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import "leaflet/dist/leaflet.css"
 
 // Get the DB object from the firebase app
 const db = firebase.firestore();
@@ -84,7 +85,7 @@ function App() {
     <div className="App">
       <h1>Welcome to the Pfyn-Finges Forest!</h1>
 
-      <MapContainer center={[51.505, -0.09]} zoom={13} scrollWheelZoom={false}>
+      <MapContainer center={[51.505, -0.09]} zoom={13} scrollWheelZoom={true} style={{width: '500px', height: '500px'}}>
         <TileLayer
             attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
