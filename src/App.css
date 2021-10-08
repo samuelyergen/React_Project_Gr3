@@ -13,3 +13,21 @@
 .App-link {
   color: #61dafb;
 }
+
+.map_poi_container{
+  display: flex;
+  flex-direction: row;
+  text-align: left;
+}
+
+.title {
+  background-image: url(ressources/c97a6aab26_50174055_forets-tropicales-disparition.jpg);
+  width: 3000px;
+  height: 150px;
+  vertical-align: center;
+  padding-top: 30px;
+}
+
+.logoutButton {
+  margin-left: 1500px;
+}
