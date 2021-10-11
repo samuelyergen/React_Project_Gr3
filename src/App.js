@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import "leaflet/dist/leaflet.css" ;
 import React from "react";
+import QRCode from 'qrcode.react';
 
 // Get the DB object from the firebase app
 const db = firebase.firestore();
@@ -213,12 +214,16 @@ class FormInputs extends React.Component{
 }
 
 function POIsList({pois}){
+    const [showQR, setShowQR] = React.useState(false)
+    const toggleQR = () => setShowQR(!showQR)
     return(
         <ul>
             <h4>POIs Collection</h4>
+            <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
             {pois.map((mapItem, index) => (
                 <li key={index}>
-                    <code style={{ margin: "1em" }}>{JSON.stringify(mapItem.data())}</code>
+                    <code style={{ margin: "1em" }}>{JSON.stringify(mapItem.data())}</code><br/>
+                    {showQR ? <QRCode value={JSON.stringify(mapItem.data())}/> : ''}<br/>
                 </li>
             ))}
         </ul>
