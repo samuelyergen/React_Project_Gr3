@@ -115,7 +115,7 @@ function App() {
         </header>
 
       <div className="map_poi_container">
-      <MapContainer center={[51.505, -0.09]} zoom={13} scrollWheelZoom={true} style={{width: '500px', height: '500px'}}>
+      <MapContainer center={[46.307205, 7.631260]} zoom={13} scrollWheelZoom={true} style={{width: '500px', height: '500px'}}>
         <TileLayer
             attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -223,7 +223,7 @@ function POIsList({pois}){
             {pois.map((mapItem, index) => (
                 <li key={index}>
                     <code style={{ margin: "1em" }}>{JSON.stringify(mapItem.data())}</code><br/>
-                    {showQR ? <QRCode value={JSON.stringify(mapItem.data())}/> : ''}<br/>
+                    {showQR ? <QRCode value={mapItem.data().URL}/> : ''}<br/>
                 </li>
             ))}
         </ul>
