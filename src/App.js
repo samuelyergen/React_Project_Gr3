@@ -5,7 +5,7 @@ import { firebase } from "./initFirebase";
 import { useAuth } from "./context/AuthContext";
 import SignIn from "./pages/SignIn";
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import {MapContainer, TileLayer, Marker, Popup, Polyline} from 'react-leaflet';
 import "leaflet/dist/leaflet.css" ;
 import React from "react";
 
@@ -23,34 +23,37 @@ function App() {
   const { isAuthenticated, isAdmin } = useAuth();
   const [isAddForm, setIsAddForm] = useState(false) ;
   // EXAMPLE : Store an entire collection of POIs in the state
-  const [poisCollection, setPoisCollection] = useState(null);
+  const [poisCollection, setPoisCollection] = useState([]);
 
   let handleIsAddForm = () => {
       setIsAddForm((isAddForm) => isAddForm = !isAddForm);
   }
 
     let formOrList ;
-    if (isAddForm)
-        formOrList = <POIsForm/>
-    else
-        formOrList = <POIsList pois={pois}/>
-
     let buttonFormList ;
-    if (isAddForm)
+
+    if (isAddForm){
+        formOrList = <POIsForm/>
         buttonFormList =  <button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>return to collection</button>
-    else
+    }
+    else{
+        formOrList = <POIsList pois={poisCollection}/>
         buttonFormList =  <button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>Add a new POI</button>
+    }
 
-
-  useEffect(async () => {
+  useEffect( () => {
     // EXAMPLE : Fetch POIs of your DB
     const poisCollection = db.collection(COLLECTION_POIS);
-    pois = (await poisCollection.get()).docs;
+
     // Subscribe to DB changes
     const unsubscribe = poisCollection.onSnapshot(
       (snapshot) => {
-        // Store the collection of POIs as an array of ID => Data pairs
-        setPoisCollection(snapshot.docs.map((d) => ({ [d.id]: d.data() })));
+        // Store the name of all POIs
+        setPoisCollection(snapshot.docs.map((d) => {
+            let data = d.data();
+            data['id'] = d.id
+            return data
+        }));
       },
       (error) => console.error(error)
     );
@@ -59,19 +62,6 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // EXAMPLE : Add a new document to the DB
-  const addDummyData = async () => {
-    // Add a random POI to your group's DB
-    const poisCollection = await db.collection(COLLECTION_POIS);
-
-    try {
-      await poisCollection.add({
-        name: `POI Test ${_.random(500)}`,
-      });
-    } catch (e) {
-      console.error("Could not add new POI");
-    }
-  };
 
   // WARNING: Only for debugging purposes, this should not be used in a production environment!
   const cleanDB = async () => {
@@ -98,7 +88,6 @@ function App() {
     }
   };
 
-
   // If the user is not authenticated, render the "SignIn" component (Firebase UI)
   if (!isAuthenticated) return <SignIn />;
 
@@ -114,6 +103,7 @@ function App() {
         </header>
 
       <div className="map_poi_container">
+
       <MapContainer center={[51.505, -0.09]} zoom={13} scrollWheelZoom={true} style={{width: '500px', height: '500px'}}>
         <TileLayer
             attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -129,16 +119,15 @@ function App() {
       {/* Show role based on admin status (from custom claim) */}
 
 
-      {/* Render the collection of POIs from the DB */}
+      {/* Render the collection of POIs from the DB or the form to add a POI*/}
           <div>
-              {!isAdmin  && (
+              {isAdmin  && (
                   <>
-                      {buttonFormList}
+                  {buttonFormList}
                   </>
               )}
               {formOrList}
           </div>
-
       </div>
     </div>
   );
@@ -152,7 +141,7 @@ class POIsForm extends React.Component {
         }
     }
 
-    emptyPOI = {name: '', description: '', URL: ''} ;
+    emptyPOI = {name: '', description: '', URL: '', coordinate_x: '', coordinate_y: ''} ;
 
     handleChange = (e) => {
         const target = e.target ;
@@ -160,9 +149,11 @@ class POIsForm extends React.Component {
         this.setState(prevState => ({
             newPOI: { ...prevState.newPOI, [name]: target.value }
         }));
+        console.log(this.state.newPOI) ;
     }
 
     handleSubmit = async (e) => {
+
         e.preventDefault() ;
 
         const poisCollection = await db.collection(COLLECTION_POIS);
@@ -172,11 +163,12 @@ class POIsForm extends React.Component {
                 name: this.state.newPOI.name,
                 description: this.state.newPOI.description,
                 URL: this.state.newPOI.URL,
+                coordinate_x : this.state.newPOI.coordinate_x,
+                coordinate_y : this.state.newPOI.coordinate_y,
             });
         } catch (e) {
-            console.error("Could not add new POI");
+            console.error("Could not add new POI" + e.message);
         }
-
         this.resetNewPOI() ;
     }
 
@@ -190,6 +182,8 @@ class POIsForm extends React.Component {
                 <br/>
                 <label>Name : <FormInputs type="text" onChange={this.handleChange} name="name"   placeholder="Name" value={this.state.newPOI.name}/></label><br/>
                 <label>Description : <FormInputs type="text" onChange={this.handleChange} name="description"   placeholder="Description" value={this.state.newPOI.description}/></label><br/>
+                <label>Coordinate X : <FormInputs type="text" onChange={this.handleChange} name="coordinate_x"  placeholder="Coordinate x" value={this.state.newPOI.coordinate_x}/></label><br/>
+                <label>Coordinate Y : <FormInputs type="text" onChange={this.handleChange} name="coordinate_y"  placeholder="Coordinate y" value={this.state.newPOI.coordinate_y}/></label><br/>
                 <label>URL : <FormInputs type="text" onChange={this.handleChange} name="URL"  placeholder="URL" value={this.state.newPOI.URL}/></label><br/>
                 <input type="submit"/></form>
         );
@@ -204,28 +198,72 @@ class FormInputs extends React.Component{
     render() {
         return (
             <>
-                <br/>
                 <input type={this.props.type} name={this.props.name} value={this.props.value} onChange={this.props.onChange} placeholder={this.props.placeholder} />
-                <br/>
             </>
         );
     }
 }
 
+
 function POIsList({pois}){
+
+   async function handleDelete(id) {
+
+       const ref = db.collection(COLLECTION_POIS);
+
+       let snapshot = await ref.get();
+
+       for (let doc of snapshot.docs) {
+           try {
+
+               if (doc.id == id){
+                   await ref.doc(doc.id).delete();
+               }
+
+           } catch (e) {
+               console.error(`Could not delete document with ID ${doc.id} `);
+               console.error(e);
+           }
+       }
+    }
+
     return(
-        <ul>
+        <div >
             <h4>POIs Collection</h4>
-            {pois.map((mapItem, index) => (
-                <li key={index}>
-                    <code style={{ margin: "1em" }}>{JSON.stringify(mapItem.data())}</code>
-                </li>
-            ))}
-        </ul>
+            <ul>
+                {pois.map((mapItem, index) => (
+                    <li key={index}>
+                       {mapItem.name + "   "}
+                        <button onClick={() => handleDelete(mapItem.id)}>delete</button></li>
+                ))}
+
+            </ul>
+        </div>
     )
 }
 
 
+
+function gpxMap(){
+    let gpxParser = require('gpxparser');
+    let gpx = new gpxParser();
+    let gpxData = gpx.parse("ressources/test1.gpx") ;
+    const positions = gpxData.tracks[0].points.map(p => [p.lat, p.lon]);
+    return (
+        <MapContainer
+            // for simplicty set center to first gpx point
+            center={positions[0]}
+            zoom={9}
+            scrollWheelZoom={false}
+        >
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <Polyline
+                pathOptions={{ fillColor: 'red', color: 'blue' }}
+                positions={positions}
+            />
+        </MapContainer>
+    )
+}
 
 
 export default App;
