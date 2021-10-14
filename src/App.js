@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import {MapContainer, TileLayer, Marker, Popup, Polyline} from 'react-leaflet';
 import "leaflet/dist/leaflet.css" ;
 import React from "react";
+import QRCode from 'qrcode.react';
 
 // Get the DB object from the firebase app
 const db = firebase.firestore();
@@ -103,8 +104,7 @@ function App() {
         </header>
 
       <div className="map_poi_container">
-
-      <MapContainer center={[51.505, -0.09]} zoom={13} scrollWheelZoom={true} style={{width: '500px', height: '500px'}}>
+      <MapContainer center={[46.307205, 7.631260]} zoom={13} scrollWheelZoom={true} style={{width: '500px', height: '500px'}}>
         <TileLayer
             attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -227,6 +227,8 @@ function POIsList({pois}){
        }
     }
 
+    const [showQR, setShowQR] = React.useState(false)
+    const toggleQR = () => setShowQR(!showQR)
     return(
         <div >
             <h4>POIs Collection</h4>
@@ -239,6 +241,14 @@ function POIsList({pois}){
 
             </ul>
         </div>
+            <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
+            {pois.map((mapItem, index) => (
+                <li key={index}>
+                    <code style={{ margin: "1em" }}>{JSON.stringify(mapItem.data())}</code><br/>
+                    {showQR ? <QRCode value={mapItem.data().URL}/> : ''}<br/>
+                </li>
+            ))}
+        </ul>
     )
 }
 
