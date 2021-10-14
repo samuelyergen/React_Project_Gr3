@@ -231,25 +231,20 @@ function POIsList({pois}){
     const toggleQR = () => setShowQR(!showQR)
     return(
         <div >
+            <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
             <h4>POIs Collection</h4>
             <ul>
                 {pois.map((mapItem, index) => (
                     <li key={index}>
                        {mapItem.name + "   "}
+                        {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
                         <button onClick={() => handleDelete(mapItem.id)}>delete</button></li>
                 ))}
-
             </ul>
-        </div>
-            <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
-            {pois.map((mapItem, index) => (
-                <li key={index}>
-                    <code style={{ margin: "1em" }}>{JSON.stringify(mapItem.data())}</code><br/>
-                    {showQR ? <QRCode value={mapItem.data().URL}/> : ''}<br/>
-                </li>
-            ))}
-        </ul>
+            </div>
+           
     )
+
 }
 
 
