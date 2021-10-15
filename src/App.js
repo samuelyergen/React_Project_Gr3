@@ -230,26 +230,45 @@ function POIsList({pois}){
     }
 
     const markPOI = (e, mapItem) => {
-       // todo mark POI on Map
+       e.preventDefault();
+       setSelectedPOI(mapItem);
     }
+
+    const back = (e) => {
+       e.preventDefault();
+       setSelectedPOI(null);
+    }
+
 
     const [showQR, setShowQR] = React.useState(false)
     const toggleQR = () => setShowQR(!showQR)
-    return(
-        <div >
-            <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
-            <h4>POIs Collection</h4>
-            <ul style={{listStyleType: "none"}}>
-                {pois.map((mapItem, index) => (
-                    <li key={index} style={{border:  "1px solid white"}} onClick={(e, {mapItem}) => markPOI(e, mapItem)}>
-                        <a onClick={markPOI}>{mapItem.name + "   "}</a>
-                        {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
-                        <button onClick={() => handleDelete(mapItem.id)}>delete</button></li>
-                ))}
-            </ul>
+
+    if(selectedPOI === null){
+        return(
+            <div >
+                <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
+                <h4>POIs Collection</h4>
+                <ul style={{listStyleType: "none"}}>
+                    {pois.map((mapItem, index) => (
+                        <li key={index} style={{border:  "1px solid white"}} onClick={(e, mapItem) => markPOI(e, mapItem)}>
+                            {mapItem.name + "   "}<br/>
+                            {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
+                            <button onClick={() => handleDelete(mapItem.id)}>delete</button></li>
+                    ))}
+                </ul>
             </div>
-           
-    )
+
+        )
+    }else{
+        return(
+            <div >
+                <button onClick={(e) => back(e)}>backToList</button>
+                <p>{JSON.stringify(selectedPOI)}</p>
+            </div>
+
+        )
+    }
+
 
 }
 
