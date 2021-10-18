@@ -202,7 +202,7 @@ class FormInputs extends React.Component{
 //fetch the pois and return the name in a list
 function POIsList({pois}){
 
-    const [info, setInfo] = useState(false)
+   const [selectedPOI, setSelectedPOI] = React.useState(null);
 
    async function handleDelete(id) {
 
@@ -224,8 +224,8 @@ function POIsList({pois}){
        }
     }
 
-    let showInfo = () => {
-       setInfo(prevState => prevState = !prevState)
+    const markPOI = (e, mapItem) => {
+       // todo mark POI on Map
     }
 
     const [showQR, setShowQR] = React.useState(false)
@@ -234,13 +234,12 @@ function POIsList({pois}){
         <div >
             <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
             <h4>POIs Collection</h4>
-            <ul>
+            <ul style={{listStyleType: "none"}}>
                 {pois.map((mapItem, index) => (
-                    <li key={index}>
-                       {mapItem.name}<span style={{padding: "20px"}}></span>
-                        <button onClick={() => handleDelete(mapItem.id)}>delete</button><br/>
-                        {showQR ? <QRCode value={mapItem.URL}/> : ''}
-                    </li>
+                    <li key={index} style={{border:  "1px solid white"}} onClick={(e, {mapItem}) => markPOI(e, mapItem)}>
+                        <a onClick={markPOI}>{mapItem.name + "   "}</a>
+                        {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
+                        <button onClick={() => handleDelete(mapItem.id)}>delete</button></li>
                 ))}
             </ul>
             </div>
