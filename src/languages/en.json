@@ -1,0 +1,13 @@
+{
+  "login": "login",
+  "logout": "logout",
+  "title": "Welcome to the Pfyn-Finges Forest",
+  "addPoi": "Add new POI",
+  "delete": "delete",
+  "showQRCodes": "show QR Codes",
+  "hideQRCodes": "hide QR Codes",
+  "poisCollection": "POIs Collection",
+  "status": "Your role is : ",
+  "adminRole": "administrator",
+  "userRole": "user"
+}
