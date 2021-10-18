@@ -1,0 +1,13 @@
+{
+  "login": "Se connecter",
+  "logout": "Se deconnecter",
+  "title": "Bienvenue au bois de finges",
+  "addPoi": "Ajouter un nouveau POI",
+  "delete": "Supprimer",
+  "showQRCodes": "Afficher les QR Codes",
+  "hideQRCodes": "Cacher les QR Codes",
+  "poisCollection": "Collection de POIs",
+  "status": "Votre role est : ",
+  "adminRole": "administrateur",
+  "userRole": "utilisateur"
+}

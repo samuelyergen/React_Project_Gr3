@@ -10,6 +10,8 @@ import "leaflet/dist/leaflet.css" ;
 import React from "react";
 import QRCode from 'qrcode.react';
 import gpxParser from "gpxparser";
+import {Text} from "./context/Language";
+import LanguageSelector from "./components/LanguageSelector";
 
 // Get the DB object from the firebase app
 const db = firebase.firestore();
@@ -44,7 +46,7 @@ function App() {
     }
     else{
         formOrList = <POIsList pois={poisCollection}/>
-        buttonFormList =  <button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>Add a new POI</button>
+        buttonFormList =  <button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}><Text tid="addPoi"/></button>
     }
 
   useEffect( () => {
@@ -102,10 +104,11 @@ function App() {
   return (
     <div className="App">
         <header>
-            <h1 className='title'>Welcome to the Pfyn-Finges Forest!</h1>
+            <h1 className='title'><Text tid="title"/></h1>
             {isAdmin ? "Admin" : "User"}
             <button onClick={signOut} className='logoutButton'>Logout</button>
             <div style={{padding : "50px"}}></div>
+            <LanguageSelector/>
         </header>
       <div className="map_poi_container">
           <Map/>
