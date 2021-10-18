@@ -12,6 +12,7 @@ import QRCode from 'qrcode.react';
 import gpxParser from "gpxparser";
 import {Text} from "./context/Language";
 import LanguageSelector from "./components/LanguageSelector";
+import {BrowserRouter as Router, Switch, Route, Link, Redirect} from "react-router-dom";
 
 // Get the DB object from the firebase app
 const db = firebase.firestore();
@@ -41,12 +42,10 @@ function App() {
     let buttonFormList ;
 
     if (isAddForm){
-        formOrList = <POIsForm/>
-        buttonFormList =  <button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>return to collection</button>
+        buttonFormList =  <Link to="/POIList"><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>return to collection</button></Link>
     }
     else{
-        formOrList = <POIsList pois={poisCollection}/>
-        buttonFormList =  <button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}><Text tid="addPoi"/></button>
+        buttonFormList =  <Link to="/POIForm"><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}><Text tid="addPoi"/></button></Link>
     }
 
   useEffect( () => {
@@ -102,7 +101,8 @@ function App() {
 
   // Normal rendering of the app for authenticated users
   return (
-    <div className="App">
+    <Router>
+      <div className="App">
         <header>
             <h1 className='title'><Text tid="title"/></h1>
             {isAdmin ? "Admin" : "User"}
@@ -110,19 +110,30 @@ function App() {
             <div style={{padding : "50px"}}></div>
             <LanguageSelector/>
         </header>
-      <div className="map_poi_container">
-          <Map/>
-          <div>
-              {isAdmin  && (
-                  <>
-                  {buttonFormList}
-                  </>
-              )}
-              {formOrList}
+          <div className="map_poi_container">
+              <Map/>
+              <div>
+                  {isAdmin  && (
+                      <>
+                          {buttonFormList}
+                      </>
+                  )}
+                  <Route exact path="/">
+                    <Redirect to="/POIList" />
+                  </Route>
+                  <Route path="/POIForm"
+                         render={() => <POIsForm />}
+                  />
+                  <Route path="/POIList"
+                         render={() => <POIsList pois={poisCollection}/>}
+                  />
+                  <Route path="/POIDetails/:id"
+                         render={routeParams => (<POIDetails {...poisCollection.find((poi) => poi.id === routeParams.match.params.id)}  />)}
+                  />
+              </div>
           </div>
       </div>
-    </div>
-
+    </Router>
   );
 }
 
@@ -227,10 +238,6 @@ function POIsList({pois}){
        }
     }
 
-    const markPOI = (e, mapItem) => {
-       // todo mark POI on Map
-    }
-
     const [showQR, setShowQR] = React.useState(false)
     const toggleQR = () => setShowQR(!showQR)
     return(
@@ -239,10 +246,15 @@ function POIsList({pois}){
             <h4>POIs Collection</h4>
             <ul style={{listStyleType: "none"}}>
                 {pois.map((mapItem, index) => (
-                    <li key={index} style={{border:  "1px solid white"}} onClick={(e, {mapItem}) => markPOI(e, mapItem)}>
-                        <a onClick={markPOI}>{mapItem.name + "   "}</a>
-                        {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
-                        <button onClick={() => handleDelete(mapItem.id)}>delete</button></li>
+                    <li key={index} style={{border:  "1px solid white"}}>
+                        <Link to={`/POIDetails/${mapItem.id}`} style={{color: "white", textDecoration: "none"}}>
+                           <div>
+                               <p>{mapItem.name}</p>
+                               {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
+                           </div>
+                        </Link>
+                        <button onClick={() => handleDelete(mapItem.id)}>delete</button>
+                    </li>
                 ))}
             </ul>
             </div>
@@ -344,5 +356,19 @@ function FileList(){
 }
 
 
+function POIDetails(props) {
+    return (
+      <div>
+          <h4>{props.name}</h4>
+          <p>{props.description}</p>
+          <a href={props.URL}>
+              <QRCode value={props.URL}/>
+          </a><br/>
+          <Link to="/POIList">
+              <button>back to List</button>
+          </Link>
+      </div>
+    );
+}
 
 export default App;
