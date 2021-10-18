@@ -9,27 +9,32 @@ import {MapContainer, TileLayer, Marker, Popup, Polyline} from 'react-leaflet';
 import "leaflet/dist/leaflet.css" ;
 import React from "react";
 import QRCode from 'qrcode.react';
+import gpxParser from "gpxparser";
 
 // Get the DB object from the firebase app
 const db = firebase.firestore();
 
-// EXAMPLE : Reference to a collection of POIs
+//Reference to a collection of POIs
 const COLLECTION_POIS = "pois";
+const COLLECTION_USERS = "users";
 
-let pois = [];
 
 
 function App() {
   // Get authenticated state using the custom "auth" hook
   const { isAuthenticated, isAdmin } = useAuth();
   const [isAddForm, setIsAddForm] = useState(false) ;
-  // EXAMPLE : Store an entire collection of POIs in the state
+  //Store an entire collection of POIs in the state
   const [poisCollection, setPoisCollection] = useState([]);
 
   let handleIsAddForm = () => {
       setIsAddForm((isAddForm) => isAddForm = !isAddForm);
   }
 
+    //formOrList display the list of POIs or
+    // the form to add a new POI
+    //buttonFormList is only for admin and allow
+    //to change between the list and the form
     let formOrList ;
     let buttonFormList ;
 
@@ -43,13 +48,13 @@ function App() {
     }
 
   useEffect( () => {
-    // EXAMPLE : Fetch POIs of your DB
+    //Fetch POIs of your DB
     const poisCollection = db.collection(COLLECTION_POIS);
-
     // Subscribe to DB changes
     const unsubscribe = poisCollection.onSnapshot(
       (snapshot) => {
-        // Store the name of all POIs
+        // Store the attributes of all POIs
+          //and add an id attributes to the object
         setPoisCollection(snapshot.docs.map((d) => {
             let data = d.data();
             data['id'] = d.id
@@ -65,7 +70,7 @@ function App() {
 
 
   // WARNING: Only for debugging purposes, this should not be used in a production environment!
-  const cleanDB = async () => {
+  /*const cleanDB = async () => {
     const ref = db.collection(COLLECTION_POIS);
 
     let snapshot = await ref.get();
@@ -78,7 +83,7 @@ function App() {
         console.error(e);
       }
     }
-  };
+  };*/
 
   // Log out of the application
   const signOut = async () => {
@@ -98,28 +103,12 @@ function App() {
     <div className="App">
         <header>
             <h1 className='title'>Welcome to the Pfyn-Finges Forest!</h1>
-            your role is {isAdmin ? "Admin" : "User"}
+            {isAdmin ? "Admin" : "User"}
             <button onClick={signOut} className='logoutButton'>Logout</button>
-         <div style={{padding : "50px"}}></div>
+            <div style={{padding : "50px"}}></div>
         </header>
-
       <div className="map_poi_container">
-      <MapContainer center={[46.307205, 7.631260]} zoom={13} scrollWheelZoom={true} style={{width: '500px', height: '500px'}}>
-        <TileLayer
-            attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Marker position={[51.505, -0.09]}>
-          <Popup>
-            A pretty CSS3 popup. <br /> Easily customizable.
-          </Popup>
-        </Marker>
-      </MapContainer>
-        <div style={{padding : "50px"}}></div>
-      {/* Show role based on admin status (from custom claim) */}
-
-
-      {/* Render the collection of POIs from the DB or the form to add a POI*/}
+          <Map/>
           <div>
               {isAdmin  && (
                   <>
@@ -130,9 +119,12 @@ function App() {
           </div>
       </div>
     </div>
+
   );
 }
 
+//return a form that allow to add a new POI to the collection
+//Admin only
 class POIsForm extends React.Component {
     constructor(props) {
         super(props);
@@ -143,6 +135,8 @@ class POIsForm extends React.Component {
 
     emptyPOI = {name: '', description: '', URL: '', coordinate_x: '', coordinate_y: ''} ;
 
+    //detect changes in the fields' form
+    //set the newPOI state with the written values
     handleChange = (e) => {
         const target = e.target ;
         const name = target.name ;
@@ -152,6 +146,7 @@ class POIsForm extends React.Component {
         console.log(this.state.newPOI) ;
     }
 
+    //add a new POI to the global collection (not user specific collection)
     handleSubmit = async (e) => {
 
         e.preventDefault() ;
@@ -204,8 +199,10 @@ class FormInputs extends React.Component{
     }
 }
 
-
+//fetch the pois and return the name in a list
 function POIsList({pois}){
+
+    const [info, setInfo] = useState(false)
 
    async function handleDelete(id) {
 
@@ -227,6 +224,10 @@ function POIsList({pois}){
        }
     }
 
+    let showInfo = () => {
+       setInfo(prevState => prevState = !prevState)
+    }
+
     const [showQR, setShowQR] = React.useState(false)
     const toggleQR = () => setShowQR(!showQR)
     return(
@@ -236,9 +237,10 @@ function POIsList({pois}){
             <ul>
                 {pois.map((mapItem, index) => (
                     <li key={index}>
-                       {mapItem.name + "   "}
-                        {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
-                        <button onClick={() => handleDelete(mapItem.id)}>delete</button></li>
+                       {mapItem.name}<span style={{padding: "20px"}}></span>
+                        <button onClick={() => handleDelete(mapItem.id)}>delete</button><br/>
+                        {showQR ? <QRCode value={mapItem.URL}/> : ''}
+                    </li>
                 ))}
             </ul>
             </div>
@@ -247,28 +249,98 @@ function POIsList({pois}){
 
 }
 
+//Useless for now
+class POI extends React.Component{
+    constructor(props) {
+        super(props);
+        this.state = {
+            id: this.props.id,
+            name : this.props.name,
+            description : this.props.description,
+            coordinate_x : this.props.coordinate_x,
+            coordinate_y : this.props.coordinate_y,
+            URL : this.props.URL,
+            visited: false
+        }
+    }
+
+    //<POI {...mapItem}>
+    render() {
+        return(
+            <span>{this.state.name}</span>
+
+        )
+    }
+
+}
+
+//display the route from a gpx file
+function Map(){
+
+    let fileReader ;
+    const [position, setPosition] = useState([])
 
 
-function gpxMap(){
-    let gpxParser = require('gpxparser');
-    let gpx = new gpxParser();
-    let gpxData = gpx.parse("ressources/test1.gpx") ;
-    const positions = gpxData.tracks[0].points.map(p => [p.lat, p.lon]);
+    const handleReading = () => {
+        const text = fileReader.result ;
+        parseFile(text);
+    }
+
+    const handleSubmission = (e) => {
+        fileReader = new FileReader()
+        fileReader.onloadend = handleReading;
+        fileReader.readAsText(e.target.files[0])
+    }
+
+
+    const parseFile = (content) => {
+        let gpxParser = require('gpxparser');
+        let gpx = new gpxParser();
+        gpx.parse(content)
+        setPosition(() => (gpx.tracks[0].points.map(p => [p.lat, p.lon])));
+    }
+
     return (
-        <MapContainer
-            // for simplicty set center to first gpx point
-            center={positions[0]}
-            zoom={9}
-            scrollWheelZoom={false}
-        >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <Polyline
-                pathOptions={{ fillColor: 'red', color: 'blue' }}
-                positions={positions}
-            />
-        </MapContainer>
+        <>
+        <input type="file" onChange={handleSubmission} />
+            <MapContainer
+                center={[46.307205, 7.631260]}
+                zoom={9}
+                scrollWheelZoom={false}
+                style={{width: '700px', height: '500px'}}
+                className="mapping"
+            >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                {(position.length &&(
+                    <Polyline
+                        pathOptions={{ fillColor: 'red', color: 'blue' }}
+                        positions={position}
+                    />
+                ))}
+            </MapContainer>
+        </>
     )
 }
+//useless for now
+function FileList(){
+
+    const [files, setFiles] = useState([])
+
+
+    return(
+        <div >
+            <h4>File Collection</h4>
+            <ul>
+                {files.map((mapItem, index) => (
+                    <li key={index}>
+                        {mapItem.name}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    )
+}
+
 
 
 export default App;
