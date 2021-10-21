@@ -16,7 +16,7 @@ import {BrowserRouter as Router, Switch, Route, Link, Redirect} from "react-rout
 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-import L from "leaflet";
+import L, {bind} from "leaflet";
 
 let DefaultIcon = L.icon({
     iconUrl: icon,
@@ -325,8 +325,9 @@ class POI extends React.Component{
 function Map(props){
 
     let fileReader ;
-    const [position, setPosition] = useState([])
+    const [mapPosition, setMapPosition] = useState([])
 
+    const [currentPosition, setCurrentPosition] = useState([0,0])
 
     const handleReading = () => {
         const text = fileReader.result ;
@@ -339,6 +340,12 @@ function Map(props){
         fileReader.readAsText(e.target.files[0])
     }
 
+    const handleSetPos = props.handleSetPos;
+
+    const setPosition = (pos) => {
+        setCurrentPosition(pos);
+        handleSetPos(pos);
+    }
 
     const parseFile = (content) => {
         let gpxParser = require('gpxparser');
@@ -357,11 +364,11 @@ function Map(props){
                 style={{width: '700px', height: '500px'}}
                 className="mapping"
             >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                {(position.length &&(
+                <TileLayer url="https://wmts20.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg" />
+                {(mapPosition.length &&(
                     <Polyline
                         pathOptions={{ fillColor: 'red', color: 'blue' }}
-                        positions={position}
+                        positions={mapPosition}
                     />
                 ))}
 
@@ -374,7 +381,8 @@ function Map(props){
                             </Popup>
                         </Marker>
                     )})}
-                <GetPos setPosition={props.handleSetPos}/>
+                <GetPos setPosition={setPosition}/>
+                <Marker icon={DefaultIcon} position={currentPosition}/>
             </MapContainer>
         </>
     )
