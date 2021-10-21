@@ -5,7 +5,7 @@ import { firebase } from "./initFirebase";
 import { useAuth } from "./context/AuthContext";
 import SignIn from "./pages/SignIn";
 import { useEffect, useState } from "react";
-import {MapContainer, TileLayer, Marker, Popup, Polyline} from 'react-leaflet';
+import {MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents} from 'react-leaflet';
 import "leaflet/dist/leaflet.css" ;
 import React from "react";
 import QRCode from 'qrcode.react';
@@ -150,7 +150,9 @@ class POIsForm extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            newPOI : this.emptyPOI
+            newPOI: this.emptyPOI,
+            currentPosX: null,
+            currentPosY: null
         }
     }
 
@@ -179,8 +181,8 @@ class POIsForm extends React.Component {
                 name: this.state.newPOI.name,
                 description: this.state.newPOI.description,
                 URL: this.state.newPOI.URL,
-                coordinate_x : this.state.newPOI.coordinate_x,
-                coordinate_y : this.state.newPOI.coordinate_y,
+                coordinate_x : this.state.currentPosX,
+                coordinate_y : this.state.currentPosY
             });
         } catch (e) {
             console.error("Could not add new POI" + e.message);
@@ -192,10 +194,15 @@ class POIsForm extends React.Component {
         this.setState({newPOI : this.emptyPOI}) ;
     }
 
+    handleSetPos = (pos) => {
+        this.setState({ currentPosX: pos.lat });
+        this.setState({ currentPosY: pos.lng });
+    }
+
     render() {
         return (
             <div className="map_poi_container">
-                <Map poisCol={this.props.poisCollection}/>
+                <Map poisCol={this.props.poisCollection} handleSetPos={this.handleSetPos}/>
                 <div>
                     {this.props.isAdmin  && (
                         <>
@@ -206,8 +213,8 @@ class POIsForm extends React.Component {
                         <br/>
                         <label>Name : <FormInputs type="text" onChange={this.handleChange} name="name"   placeholder="Name" value={this.state.newPOI.name}/></label><br/>
                         <label>Description : <FormInputs type="text" onChange={this.handleChange} name="description"   placeholder="Description" value={this.state.newPOI.description}/></label><br/>
-                        <label>Coordinate X : <FormInputs type="text" onChange={this.handleChange} name="coordinate_x"  placeholder="Coordinate x" value={this.state.newPOI.coordinate_x}/></label><br/>
-                        <label>Coordinate Y : <FormInputs type="text" onChange={this.handleChange} name="coordinate_y"  placeholder="Coordinate y" value={this.state.newPOI.coordinate_y}/></label><br/>
+                        <label>Coordinate X : <FormInputs type="text" onChange={this.handleChange} name="coordinate_x"  placeholder="Coordinate x" value={this.state.currentPosX}/></label><br/>
+                        <label>Coordinate Y : <FormInputs type="text" onChange={this.handleChange} name="coordinate_y"  placeholder="Coordinate y" value={this.state.currentPosY}/></label><br/>
                         <label>URL : <FormInputs type="text" onChange={this.handleChange} name="URL"  placeholder="URL" value={this.state.newPOI.URL}/></label><br/>
                         <input type="submit"/></form>
                 </div>
@@ -367,10 +374,21 @@ function Map(props){
                             </Popup>
                         </Marker>
                     )})}
+                <GetPos setPosition={props.handleSetPos}/>
             </MapContainer>
         </>
     )
 }
+
+function GetPos(props) {
+    useMapEvents({
+        click: (e) => {
+            props.setPosition(e.latlng)
+        }
+    });
+    return null;
+}
+
 //useless for now
 function FileList(){
 
