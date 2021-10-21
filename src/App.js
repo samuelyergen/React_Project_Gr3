@@ -14,6 +14,15 @@ import {Text} from "./context/Language";
 import LanguageSelector from "./components/LanguageSelector";
 import {BrowserRouter as Router, Switch, Route, Link, Redirect} from "react-router-dom";
 
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import L from "leaflet";
+
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow
+});
+
 // Get the DB object from the firebase app
 const db = firebase.firestore();
 
@@ -33,6 +42,8 @@ function App() {
   let handleIsAddForm = () => {
       setIsAddForm((isAddForm) => isAddForm = !isAddForm);
   }
+
+
 
     //formOrList display the list of POIs or
     // the form to add a new POI
@@ -98,6 +109,11 @@ function App() {
   // If the user is not authenticated, render the "SignIn" component (Firebase UI)
   if (!isAuthenticated) return <SignIn />;
 
+  if (!isAdmin){
+      const loggedInUser = db.collection(COLLECTION_USERS).get();
+      const userPoisCollection = [];
+
+  }
 
   // Normal rendering of the app for authenticated users
   return (
@@ -345,7 +361,7 @@ function Map(props){
                 {props.poisCol.map((mapItem) => {
                     const pos = {lat: mapItem.coordinate_x, lng: mapItem.coordinate_y};
                     return(
-                        <Marker position={pos}>
+                        <Marker icon={DefaultIcon} position={pos}>
                             <Popup>
                                 <Link to={`/POIDetails/${mapItem.id}`}>{mapItem.name}</Link>
                             </Popup>
