@@ -110,28 +110,19 @@ function App() {
             <div style={{padding : "50px"}}></div>
             <LanguageSelector/>
         </header>
-          <div className="map_poi_container">
-              <Map/>
-              <div>
-                  {isAdmin  && (
-                      <>
-                          {buttonFormList}
-                      </>
-                  )}
+
                   <Route exact path="/">
                     <Redirect to="/POIList" />
                   </Route>
                   <Route path="/POIForm"
-                         render={() => <POIsForm />}
+                         render={() => <POIsForm isAdmin={isAdmin} buttonFormList={buttonFormList} poisCollection={poisCollection}/>}
                   />
                   <Route path="/POIList"
-                         render={() => <POIsList pois={poisCollection}/>}
+                         render={() => <POIsList pois={poisCollection} isAdmin={isAdmin} buttonFormList={buttonFormList} poisCollection={poisCollection}/>}
                   />
                   <Route path="/POIDetails/:id"
-                         render={routeParams => (<POIDetails {...poisCollection.find((poi) => poi.id === routeParams.match.params.id)}  />)}
+                         render={routeParams => (<POIDetails selectedPOI={poisCollection.find((poi) => poi.id === routeParams.match.params.id)} isAdmin={isAdmin} buttonFormList={buttonFormList} poisCollection={poisCollection} />)}
                   />
-              </div>
-          </div>
       </div>
     </Router>
   );
@@ -165,10 +156,10 @@ class POIsForm extends React.Component {
 
         e.preventDefault() ;
 
-        const poisCollection = await db.collection(COLLECTION_POIS);
+        const poisCollectionTemp = db.collection(COLLECTION_POIS);
 
         try {
-            await poisCollection.add({
+            await poisCollectionTemp.add({
                 name: this.state.newPOI.name,
                 description: this.state.newPOI.description,
                 URL: this.state.newPOI.URL,
@@ -187,14 +178,24 @@ class POIsForm extends React.Component {
 
     render() {
         return (
-            <form onSubmit={this.handleSubmit}>
-                <br/>
-                <label>Name : <FormInputs type="text" onChange={this.handleChange} name="name"   placeholder="Name" value={this.state.newPOI.name}/></label><br/>
-                <label>Description : <FormInputs type="text" onChange={this.handleChange} name="description"   placeholder="Description" value={this.state.newPOI.description}/></label><br/>
-                <label>Coordinate X : <FormInputs type="text" onChange={this.handleChange} name="coordinate_x"  placeholder="Coordinate x" value={this.state.newPOI.coordinate_x}/></label><br/>
-                <label>Coordinate Y : <FormInputs type="text" onChange={this.handleChange} name="coordinate_y"  placeholder="Coordinate y" value={this.state.newPOI.coordinate_y}/></label><br/>
-                <label>URL : <FormInputs type="text" onChange={this.handleChange} name="URL"  placeholder="URL" value={this.state.newPOI.URL}/></label><br/>
-                <input type="submit"/></form>
+            <div className="map_poi_container">
+                <Map poisCol={this.props.poisCollection}/>
+                <div>
+                    {this.props.isAdmin  && (
+                        <>
+                            {this.props.buttonFormList}
+                        </>
+                    )}
+                    <form onSubmit={this.handleSubmit}>
+                        <br/>
+                        <label>Name : <FormInputs type="text" onChange={this.handleChange} name="name"   placeholder="Name" value={this.state.newPOI.name}/></label><br/>
+                        <label>Description : <FormInputs type="text" onChange={this.handleChange} name="description"   placeholder="Description" value={this.state.newPOI.description}/></label><br/>
+                        <label>Coordinate X : <FormInputs type="text" onChange={this.handleChange} name="coordinate_x"  placeholder="Coordinate x" value={this.state.newPOI.coordinate_x}/></label><br/>
+                        <label>Coordinate Y : <FormInputs type="text" onChange={this.handleChange} name="coordinate_y"  placeholder="Coordinate y" value={this.state.newPOI.coordinate_y}/></label><br/>
+                        <label>URL : <FormInputs type="text" onChange={this.handleChange} name="URL"  placeholder="URL" value={this.state.newPOI.URL}/></label><br/>
+                        <input type="submit"/></form>
+                </div>
+            </div>
         );
     }
 
@@ -214,7 +215,7 @@ class FormInputs extends React.Component{
 }
 
 //fetch the pois and return the name in a list
-function POIsList({pois}){
+function POIsList(props){
 
    const [selectedPOI, setSelectedPOI] = React.useState(null);
 
@@ -241,24 +242,33 @@ function POIsList({pois}){
     const [showQR, setShowQR] = React.useState(false)
     const toggleQR = () => setShowQR(!showQR)
     return(
-        <div >
-            <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
-            <h4>POIs Collection</h4>
-            <ul style={{listStyleType: "none"}}>
-                {pois.map((mapItem, index) => (
-                    <li key={index} style={{border:  "1px solid white"}}>
-                        <Link to={`/POIDetails/${mapItem.id}`} style={{color: "white", textDecoration: "none"}}>
-                           <div>
-                               <p>{mapItem.name}</p>
-                               {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
-                           </div>
-                        </Link>
-                        <button onClick={() => handleDelete(mapItem.id)}>delete</button>
-                    </li>
-                ))}
-            </ul>
+        <div className="map_poi_container">
+            <Map poisCol={props.poisCollection}/>
+            <div>
+                {props.isAdmin  && (
+                    <>
+                        {props.buttonFormList}
+                    </>
+                )}
+                <div >
+                    <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
+                    <h4>POIs Collection</h4>
+                    <ul style={{listStyleType: "none"}}>
+                        {props.pois.map((mapItem, index) => (
+                            <li key={index} style={{border:  "1px solid white"}}>
+                                <Link to={`/POIDetails/${mapItem.id}`} style={{color: "white", textDecoration: "none"}}>
+                                   <div>
+                                       <p>{mapItem.name}</p>
+                                       {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
+                                   </div>
+                                </Link>
+                                <button onClick={() => handleDelete(mapItem.id)}>delete</button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             </div>
-           
+        </div>
     )
 
 }
@@ -289,7 +299,7 @@ class POI extends React.Component{
 }
 
 //display the route from a gpx file
-function Map(){
+function Map(props){
 
     let fileReader ;
     const [position, setPosition] = useState([])
@@ -331,6 +341,16 @@ function Map(){
                         positions={position}
                     />
                 ))}
+
+                {props.poisCol.map((mapItem) => {
+                    const pos = {lat: mapItem.coordinate_x, lng: mapItem.coordinate_y};
+                    return(
+                        <Marker position={pos}>
+                            <Popup>
+                                <Link to={`/POIDetails/${mapItem.id}`}>{mapItem.name}</Link>
+                            </Popup>
+                        </Marker>
+                    )})}
             </MapContainer>
         </>
     )
@@ -357,17 +377,31 @@ function FileList(){
 
 
 function POIDetails(props) {
+
+    const poisCol = [props.selectedPOI];
+
     return (
-      <div>
-          <h4>{props.name}</h4>
-          <p>{props.description}</p>
-          <a href={props.URL}>
-              <QRCode value={props.URL}/>
-          </a><br/>
-          <Link to="/POIList">
-              <button>back to List</button>
-          </Link>
-      </div>
+        <div className="map_poi_container">
+
+            <Map poisCol={poisCol}/>
+            <div>
+                {props.isAdmin  && (
+                    <>
+                        {props.buttonFormList}
+                    </>
+                )}
+                <div>
+                      <h4>{props.selectedPOI.name}</h4>
+                      <p>{props.selectedPOI.description}</p>
+                      <a href={props.selectedPOI.URL}>
+                          <QRCode value={props.selectedPOI.URL}/>
+                      </a><br/>
+                      <Link to="/POIList">
+                          <button>back to List</button>
+                      </Link>
+                </div>
+            </div>
+        </div>
     );
 }
 
