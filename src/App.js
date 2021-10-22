@@ -53,7 +53,7 @@ function App() {
     let buttonFormList ;
 
     if (isAddForm){
-        buttonFormList =  <Link to="/POIList"><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>return to collection</button></Link>
+        buttonFormList =  <Link to="/POIList"><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>Back to list</button></Link>
     }
     else{
         buttonFormList =  <Link to="/POIForm"><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}><Text tid="addPoi"/></button></Link>
@@ -131,7 +131,7 @@ function App() {
                     <Redirect to="/POIList" />
                   </Route>
                   <Route path="/POIForm"
-                         render={() => <POIsForm isAdmin={isAdmin} buttonFormList={buttonFormList} poisCollection={poisCollection}/>}
+                         render={() => <AddPOI isAdmin={isAdmin} buttonFormList={buttonFormList} poisCollection={poisCollection}/>}
                   />
                   <Route path="/POIList"
                          render={() => <POIsList pois={poisCollection} isAdmin={isAdmin} buttonFormList={buttonFormList} poisCollection={poisCollection}/>}
@@ -139,6 +139,9 @@ function App() {
                   <Route path="/POIDetails/:id"
                          render={routeParams => (<POIDetails selectedPOI={poisCollection.find((poi) => poi.id === routeParams.match.params.id)} isAdmin={isAdmin} buttonFormList={buttonFormList} poisCollection={poisCollection} />)}
                   />
+                <Route path="/POIEdit/:id"
+                 render={routeParams => (<POIEdit selectedPOI={poisCollection.find((poi) => poi.id === routeParams.match.params.id)}  poisCollection={poisCollection} />)}
+                />
       </div>
     </Router>
   );
@@ -146,7 +149,7 @@ function App() {
 
 //return a form that allow to add a new POI to the collection
 //Admin only
-class POIsForm extends React.Component {
+class AddPOI extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -209,14 +212,8 @@ class POIsForm extends React.Component {
                             {this.props.buttonFormList}
                         </>
                     )}
-                    <form onSubmit={this.handleSubmit}>
-                        <br/>
-                        <label>Name : <FormInputs type="text" onChange={this.handleChange} name="name"   placeholder="Name" value={this.state.newPOI.name}/></label><br/>
-                        <label>Description : <FormInputs type="text" onChange={this.handleChange} name="description"   placeholder="Description" value={this.state.newPOI.description}/></label><br/>
-                        <label>Coordinate X : <FormInputs type="text" onChange={this.handleChange} name="coordinate_x"  placeholder="Coordinate x" value={this.state.currentPosX}/></label><br/>
-                        <label>Coordinate Y : <FormInputs type="text" onChange={this.handleChange} name="coordinate_y"  placeholder="Coordinate y" value={this.state.currentPosY}/></label><br/>
-                        <label>URL : <FormInputs type="text" onChange={this.handleChange} name="URL"  placeholder="URL" value={this.state.newPOI.URL}/></label><br/>
-                        <input type="submit"/></form>
+                    <FormPOI handleChange={this.handleChange} handleSubmit={this.handleSubmit} name={this.state.newPOI.name} description={this.state.newPOI.description}
+                             coordinate_x={this.state.newPOI.coordinate_x} coordinate_y={this.state.newPOI.coordinate_y} URL={this.state.newPOI.URL}/>
                 </div>
             </div>
         );
@@ -286,6 +283,9 @@ function POIsList(props){
                                    </div>
                                 </Link>
                                 <button onClick={() => handleDelete(mapItem.id)}>delete</button>
+                                <Link to={`/POIEdit/${mapItem.id}` }>
+                                    <button>Edit</button>
+                                </Link>
                             </li>
                         ))}
                     </ul>
@@ -424,7 +424,82 @@ function FileList(){
     )
 }
 
+//Allow to edit a POI in the global collection
+//Only for admins
+class POIEdit extends React.Component{
+    constructor(props) {
+        super(props);
+        this.state = {
+            editablePOI : this.poi
+        }
+    }
 
+    poi = {name: this.props.selectedPOI.name, description: this.props.selectedPOI.description, URL: this.props.selectedPOI.URL,
+        coordinate_x: this.props.selectedPOI.coordinate_x, coordinate_y: this.props.selectedPOI.coordinate_y, id: this.props.selectedPOI.id}
+
+    poisCol = [this.props.selectedPOI];
+
+    handleChange = (e) => {
+        const target = e.target ;
+        const name = target.name ;
+        this.setState(prevState => ({
+            editablePOI: { ...prevState.editablePOI, [name]: target.value }
+        }));
+        console.log(this.state.editablePOI) ;
+    }
+
+    handleSubmit = async (e) => {
+
+        e.preventDefault();
+
+        const poiRef = db.collection(COLLECTION_POIS).doc(this.state.editablePOI.id)
+
+        try{
+            await poiRef.set(
+                {'name': this.state.editablePOI.name,
+                    'description': this.state.editablePOI.description,
+                    'URL': this.state.editablePOI.URL,
+                    'coordinate_x': this.state.editablePOI.coordinate_x,
+                    'coordinate_y': this.state.editablePOI.coordinate_y
+                })
+        }catch{
+            console.error("Could not update POI" + e.message);
+        }
+    }
+
+    render() {
+        return (
+            <div className="map_poi_container">
+                <Map poisCol={this.poisCol}/>
+                <div>
+                    <Link to="/POIList">
+                        <button style={{width: '120px', height: '50px'}}>back to List</button>
+                    </Link>
+                    <FormPOI handleChange={this.handleChange} handleSubmit={this.handleSubmit} name={this.state.editablePOI.name} description={this.state.editablePOI.description}
+                             coordinate_x={this.state.editablePOI.coordinate_x} coordinate_y={this.state.editablePOI.coordinate_y} URL={this.state.editablePOI.URL}/>
+                </div>
+
+            </div>
+        );
+    }
+}
+
+//Form used to add or edit a POI
+function FormPOI(props){
+    return(
+        <form onSubmit={props.handleSubmit}>
+            <br/>
+            <label>Name : <FormInputs type="text" onChange={props.handleChange} name="name"   placeholder="Name" value={props.name}/></label><br/>
+            <label>Description : <FormInputs type="text" onChange={props.handleChange} name="description"  placeholder="Description" value={props.description}/></label><br/>
+            <label>Coordinate X : <FormInputs type="text" onChange={props.handleChange} name="coordinate_x" placeholder="Coordinate x" value={props.coordinate_x}/></label><br/>
+            <label>Coordinate Y : <FormInputs type="text" onChange={props.handleChange} name="coordinate_y"  placeholder="Coordinate y" value={props.coordinate_y}/></label><br/>
+            <label>URL : <FormInputs type="text" onChange={props.handleChange} name="URL"  placeholder="URL" value={props.URL}/></label><br/>
+            <input type="submit" value="Submit"/>
+            </form>
+    )
+}
+
+//Display information about a selected POI
 function POIDetails(props) {
 
     const poisCol = [props.selectedPOI];
