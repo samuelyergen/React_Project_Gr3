@@ -381,8 +381,15 @@ function Map(props){
                             </Popup>
                         </Marker>
                     )})}
-                <GetPos setPosition={setPosition}/>
-                <Marker icon={DefaultIcon} position={currentPosition}/>
+                <Route path="/POIForm"
+                       render={() => (
+                           <>
+                               <GetPos setPosition={setPosition}/>
+                               <Marker icon={DefaultIcon} position={currentPosition}/>
+                           </>
+                       )}
+                />
+
             </MapContainer>
         </>
     )
