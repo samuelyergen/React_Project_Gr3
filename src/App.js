@@ -351,7 +351,7 @@ function Map(props){
         let gpxParser = require('gpxparser');
         let gpx = new gpxParser();
         gpx.parse(content)
-        setPosition(() => (gpx.tracks[0].points.map(p => [p.lat, p.lon])));
+        setMapPosition(() => (gpx.tracks[0].points.map(p => [p.lat, p.lon])));
     }
 
     return (
