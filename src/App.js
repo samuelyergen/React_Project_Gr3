@@ -213,7 +213,7 @@ class AddPOI extends React.Component {
                         </>
                     )}
                     <FormPOI handleChange={this.handleChange} handleSubmit={this.handleSubmit} name={this.state.newPOI.name} description={this.state.newPOI.description}
-                             coordinate_x={this.state.newPOI.coordinate_x} coordinate_y={this.state.newPOI.coordinate_y} URL={this.state.newPOI.URL}/>
+                             coordinate_x={this.state.currentPosX} coordinate_y={this.state.currentPosY} URL={this.state.newPOI.URL}/>
                 </div>
             </div>
         );
@@ -340,11 +340,9 @@ function Map(props){
         fileReader.readAsText(e.target.files[0])
     }
 
-    const handleSetPos = props.handleSetPos;
-
     const setPosition = (pos) => {
         setCurrentPosition(pos);
-        handleSetPos(pos);
+        props.handleSetPos(pos);
     }
 
     const parseFile = (content) => {
