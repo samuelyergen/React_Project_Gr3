@@ -31,13 +31,14 @@ const COLLECTION_POIS = "pois";
 const COLLECTION_USERS = "users";
 
 
-
 function App() {
   // Get authenticated state using the custom "auth" hook
   const { isAuthenticated, isAdmin } = useAuth();
   const [isAddForm, setIsAddForm] = useState(false) ;
   //Store an entire collection of POIs in the state
   const [poisCollection, setPoisCollection] = useState([]);
+  const [userCollection, setUserCollection] = useState([]);
+  let isUserInDB = false;
 
   let handleIsAddForm = () => {
       setIsAddForm((isAddForm) => isAddForm = !isAddForm);
@@ -75,11 +76,25 @@ function App() {
       },
       (error) => console.error(error)
     );
-
     // Unsubscribe on unmount
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+      const myUserCollection = db.collection(COLLECTION_USERS);
+      // Subscribe to DB changes
+      const unsubscribe = myUserCollection.onSnapshot(
+          (snapshot) => {
+              // Store the attributes of all POIs
+              //and add an id attributes to the object
+              setUserCollection(snapshot.docs.map((d) => {
+                    return d.id
+                }));
+            },
+            (error) => console.error(error)
+        );
+        return () => unsubscribe();
+  }, [])
 
   // WARNING: Only for debugging purposes, this should not be used in a production environment!
   /*const cleanDB = async () => {
@@ -110,9 +125,21 @@ function App() {
   if (!isAuthenticated) return <SignIn />;
 
   if (!isAdmin){
-      const loggedInUser = db.collection(COLLECTION_USERS).get();
-      const userPoisCollection = [];
-
+      const currentId = firebase.auth().currentUser.uid;
+        userCollection.forEach(element => {
+            if(element === currentId) {
+                isUserInDB = true;
+            }
+        })
+        if (!isUserInDB) {
+            try {
+                db.collection(COLLECTION_USERS).doc(firebase.auth().currentUser.uid).set({
+                    name: firebase.auth().currentUser.displayName
+                })
+            } catch (e){
+                console.error("Could not add User" + e.message)
+            }
+        }
   }
 
   // Normal rendering of the app for authenticated users
