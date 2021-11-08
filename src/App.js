@@ -1,6 +1,5 @@
 import "./App.css";
 
-import _ from "lodash";
 import {firebase} from "./initFirebase";
 import {useAuth} from "./context/AuthContext";
 import SignIn from "./pages/SignIn";
@@ -29,6 +28,7 @@ const db = firebase.firestore();
 //Reference to a collection of POIs
 const COLLECTION_POIS = "pois";
 const COLLECTION_USERS = "users";
+let poiCurrentUser = [];
 
 
 function App() {
@@ -41,17 +41,15 @@ function App() {
     const [userCollection, setUserCollection] = useState([]);
     let isUserInDB = null;
 
+
     let handleIsAddForm = () => {
         setIsAddForm((isAddForm) => isAddForm = !isAddForm);
     }
 
-    //formOrList display the list of POIs or
-    // the form to add a new POI
+
     //buttonFormList is only for admin and allow
     //to change between the list and the form
-    let formOrList ;
     let buttonFormList ;
-
 
     buttonFormList =  <Link to={isAddForm ? "/POIList" : "/POIForm"}><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>{isAddForm ? "Back to list" : "Add new POI"}</button></Link>
 
@@ -79,10 +77,7 @@ function App() {
 
   const sortPOIs = () => {
       let user = userCollection.find(user => firebase.auth().currentUser.uid === user.id)
-      console.log("user : " + user)
-      let newArray = poisCollection.filter(poi => user.pois.includes(poi.name))
-      console.log("new array : " + newArray)
-      return newArray
+      poiCurrentUser = poisCollection.filter(poi => user.pois.includes(poi.id))
   }
 
   useEffect(() => {
@@ -93,18 +88,17 @@ function App() {
               // Store the attributes of all POIs
               //and add an id attributes to the object
               setUserCollection(snapshot.docs.map((d) => {
-                    return d.id
+                  let data = d.data();
+                  data['id'] = d.id
+                  return data
                 }));
             },
             (error) => console.error(error)
         );
-      if(!isAdmin)
-        setPoisCollection(sortPOIs())
-
         return () => unsubscribe();
     }, [])
 
-    
+
     // WARNING: Only for debugging purposes, this should not be used in a production environment!
     /*const cleanDB = async () => {
       const ref = db.collection(COLLECTION_POIS);
@@ -135,14 +129,17 @@ function App() {
 
     if (isAdmin === false) {
         const currentId = firebase.auth().currentUser.uid;
-        userCollection.forEach(element => {
-            if (element === currentId) {
-                isUserInDB = true
-            } else {
+       let u = userCollection.map(element => element.id === currentId)
+        if(u.length != 0){
+            u.forEach(element => {
+                if (element) {
+                    isUserInDB = true
+                }
+            })
+            if(isUserInDB === null)
                 isUserInDB = false
-            }
-            console.log("DB : " +isUserInDB)
-        })
+        }
+        console.log("u : " + isUserInDB)
         if (isUserInDB === false) {
             try {
                 db.collection(COLLECTION_USERS).doc(firebase.auth().currentUser.uid).set({
@@ -153,6 +150,13 @@ function App() {
             }
         }
     }
+
+    let user = userCollection.find(user => firebase.auth().currentUser.uid === user.id)
+    if(isAdmin === false && user != undefined){
+        sortPOIs()
+    }
+    if (isAdmin === true)
+        poiCurrentUser = poisCollection
 
     // Normal rendering of the app for authenticated users
     return (
@@ -174,8 +178,8 @@ function App() {
                                              poisCollection={poisCollection}/>}
                 />
                 <Route path="/POIList"
-                       render={() => <POIsList pois={poisCollection} isAdmin={isAdmin} buttonFormList={buttonFormList}
-                                               poisCollection={poisCollection}/>}
+                       render={() => <POIsList pois={isAdmin ? poisCollection : poiCurrentUser} isAdmin={isAdmin} buttonFormList={buttonFormList}
+                                               poisCollection={isAdmin ? poisCollection : poiCurrentUser} isAdmin={isAdmin}/>}
                 />
                 <Route path="/POIDetails/:id"
                        render={routeParams => (<POIDetails
@@ -331,10 +335,15 @@ function POIsList(props) {
                                         {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
                                     </div>
                                 </Link>
-                                <button onClick={() => handleDelete(mapItem.id)}>delete</button>
-                                <Link to={`/POIEdit/${mapItem.id}`}>
-                                    <button>Edit</button>
-                                </Link>
+                                {props.isAdmin && (
+                                    <>
+                                        <button onClick={() => handleDelete(mapItem.id)}>delete</button>
+                                        <Link to={`/POIEdit/${mapItem.id}`}>
+                                            <button>Edit</button>
+                                        </Link>
+                                    </>
+
+                                )}
                             </li>
                         ))}
                     </ul>
