@@ -10,6 +10,10 @@
   color: white;
 }
 
+header{
+  width: 100%;
+}
+
 .App-link {
   color: #61dafb;
 }
@@ -22,16 +26,24 @@
 
 .title {
   background-image: url(ressources/c97a6aab26_50174055_forets-tropicales-disparition.jpg);
-  width: 1910px;
+  width: 100%;
   height: 150px;
   vertical-align: center;
-  padding-top: 30px;
+  padding-top: 50px;
+  margin-top: 0;
 }
 
 .logoutButton {
-  margin-left: 1500px;
+  margin-left: 60%;
 }
 
 .mapping {
   margin-right: 100px;
+}
+
+#poisList ul li{
+  margin-left: -30%;
+  width: 120%;
+  padding-left: 20px;
+  padding-bottom: 20px;
 }

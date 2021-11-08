@@ -312,7 +312,7 @@ function POIsList(props) {
                         {props.buttonFormList}
                     </>
                 )}
-                <div>
+                <div id="poisList">
                     <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
                     <h4>POIs Collection</h4>
                     <ul style={{listStyleType: "none"}}>
