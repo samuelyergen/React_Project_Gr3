@@ -12,7 +12,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   // Authenticated & admin state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(null);
 
   // Listen to the Firebase Auth state and set the local state.
   useEffect(() => {
@@ -26,9 +26,12 @@ export const AuthProvider = ({ children }) => {
           let idTokenResult = await firebase
             .auth()
             .currentUser.getIdTokenResult(true);
-
           // Set admin status based on "admin" custom claim
-          setIsAdmin(!!idTokenResult.claims.admin);
+          if (idTokenResult.claims.admin) {
+              setIsAdmin(!!idTokenResult.claims.admin);
+          } else {
+              setIsAdmin(false)
+          }
         }
       });
 

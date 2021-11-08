@@ -1,10 +1,10 @@
 import "./App.css";
 
 import _ from "lodash";
-import { firebase } from "./initFirebase";
-import { useAuth } from "./context/AuthContext";
+import {firebase} from "./initFirebase";
+import {useAuth} from "./context/AuthContext";
 import SignIn from "./pages/SignIn";
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import {MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents} from 'react-leaflet';
 import "leaflet/dist/leaflet.css" ;
 import React from "react";
@@ -32,146 +32,157 @@ const COLLECTION_USERS = "users";
 
 
 function App() {
-  // Get authenticated state using the custom "auth" hook
-  const { isAuthenticated, isAdmin } = useAuth();
-  const [isAddForm, setIsAddForm] = useState(false) ;
-  //Store an entire collection of POIs in the state
-  const [poisCollection, setPoisCollection] = useState([]);
-  const [userCollection, setUserCollection] = useState([]);
-  let isUserInDB = false;
+    // Get authenticated state using the custom "auth" hook
+    const {isAuthenticated, isAdmin} = useAuth();
+    const [isAddForm, setIsAddForm] = useState(false);
+    //Store an entire collection of POIs in the state
+    const [poisCollection, setPoisCollection] = useState([]);
+    //Collection of the users
+    const [userCollection, setUserCollection] = useState([]);
+    let isUserInDB = null;
 
-  let handleIsAddForm = () => {
-      setIsAddForm((isAddForm) => isAddForm = !isAddForm);
-  }
-
+    let handleIsAddForm = () => {
+        setIsAddForm((isAddForm) => isAddForm = !isAddForm);
+    }
 
 
     //formOrList display the list of POIs or
     // the form to add a new POI
     //buttonFormList is only for admin and allow
     //to change between the list and the form
-    let formOrList ;
-    let buttonFormList ;
+    let formOrList;
+    let buttonFormList;
 
-    if (isAddForm){
-        buttonFormList =  <Link to="/POIList"><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>Back to list</button></Link>
+    if (isAddForm) {
+        buttonFormList = <Link to="/POIList">
+            <button onClick={handleIsAddForm} style={{width: '120px', height: '50px'}}>Back to list</button>
+        </Link>
+    } else {
+        buttonFormList = <Link to="/POIForm">
+            <button onClick={handleIsAddForm} style={{width: '120px', height: '50px'}}><Text tid="addPoi"/></button>
+        </Link>
     }
-    else{
-        buttonFormList =  <Link to="/POIForm"><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}><Text tid="addPoi"/></button></Link>
-    }
 
-  useEffect( () => {
-    //Fetch POIs of your DB
-    const poisCollection = db.collection(COLLECTION_POIS);
-    // Subscribe to DB changes
-    const unsubscribe = poisCollection.onSnapshot(
-      (snapshot) => {
-        // Store the attributes of all POIs
-          //and add an id attributes to the object
-        setPoisCollection(snapshot.docs.map((d) => {
-            let data = d.data();
-            data['id'] = d.id
-            return data
-        }));
-      },
-      (error) => console.error(error)
-    );
-    // Unsubscribe on unmount
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-      const myUserCollection = db.collection(COLLECTION_USERS);
-      // Subscribe to DB changes
-      const unsubscribe = myUserCollection.onSnapshot(
-          (snapshot) => {
-              // Store the attributes of all POIs
-              //and add an id attributes to the object
-              setUserCollection(snapshot.docs.map((d) => {
+    useEffect(() => {
+        const myUserCollection = db.collection(COLLECTION_USERS);
+        // Subscribe to DB changes
+        const unsubscribe = myUserCollection.onSnapshot(
+            (snapshot) => {
+                // Store the attributes of all users
+                //and add an id attributes to the object
+                setUserCollection(snapshot.docs.map((d) => {
                     return d.id
                 }));
             },
             (error) => console.error(error)
         );
         return () => unsubscribe();
-  }, [])
+    }, [])
 
-  // WARNING: Only for debugging purposes, this should not be used in a production environment!
-  /*const cleanDB = async () => {
-    const ref = db.collection(COLLECTION_POIS);
+    useEffect(() => {
+        //Fetch POIs of your DB
+        const poisCollection = db.collection(COLLECTION_POIS);
+        // Subscribe to DB changes
+        const unsubscribe = poisCollection.onSnapshot(
+            (snapshot) => {
+                // Store the attributes of all POIs
+                //and add an id attributes to the object
+                setPoisCollection(snapshot.docs.map((d) => {
+                    let data = d.data();
+                    data['id'] = d.id
+                    return data
+                }));
+            },
+            (error) => console.error(error)
+        );
+        // Unsubscribe on unmount
+        return () => unsubscribe();
+    }, []);
 
-    let snapshot = await ref.get();
+    // WARNING: Only for debugging purposes, this should not be used in a production environment!
+    /*const cleanDB = async () => {
+      const ref = db.collection(COLLECTION_POIS);
 
-    for (let doc of snapshot.docs) {
-      try {
-        await ref.doc(doc.id).delete();
-      } catch (e) {
-        console.error(`Could not delete document with ID ${doc.id} `);
-        console.error(e);
+      let snapshot = await ref.get();
+
+      for (let doc of snapshot.docs) {
+        try {
+          await ref.doc(doc.id).delete();
+        } catch (e) {
+          console.error(`Could not delete document with ID ${doc.id} `);
+          console.error(e);
+        }
       }
-    }
-  };*/
+    };*/
 
-  // Log out of the application
-  const signOut = async () => {
-    try {
-      await firebase.auth().signOut();
-    } catch (e) {
-      console.error(e);
-    }
-  };
+    // Log out of the application
+    const signOut = async () => {
+        try {
+            await firebase.auth().signOut();
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
-  // If the user is not authenticated, render the "SignIn" component (Firebase UI)
-  if (!isAuthenticated) return <SignIn />;
+    // If the user is not authenticated, render the "SignIn" component (Firebase UI)
+    if (!isAuthenticated) return <SignIn/>;
 
-  if (!isAdmin){
-      const currentId = firebase.auth().currentUser.uid;
+    if (isAdmin === false) {
+        const currentId = firebase.auth().currentUser.uid;
         userCollection.forEach(element => {
-            if(element === currentId) {
-                isUserInDB = true;
+            if (element === currentId) {
+                isUserInDB = true
+            } else {
+                isUserInDB = false
             }
         })
-        if (!isUserInDB) {
+        if (isUserInDB === false) {
             try {
                 db.collection(COLLECTION_USERS).doc(firebase.auth().currentUser.uid).set({
                     name: firebase.auth().currentUser.displayName
                 })
-            } catch (e){
+            } catch (e) {
                 console.error("Could not add User" + e.message)
             }
         }
-  }
+    }
 
-  // Normal rendering of the app for authenticated users
-  return (
-    <Router>
-      <div className="App">
-        <header>
-            <h1 className='title'><Text tid="title"/></h1>
-            {isAdmin ? "Admin" : "User"}
-            <button onClick={signOut} className='logoutButton'>Logout</button>
-            <div style={{padding : "50px"}}></div>
-            <LanguageSelector/>
-        </header>
+    // Normal rendering of the app for authenticated users
+    return (
+        <Router>
+            <div className="App">
+                <header>
+                    <h1 className='title'><Text tid="title"/></h1>
+                    {isAdmin ? "Admin" : "User"}
+                    <button onClick={signOut} className='logoutButton'>Logout</button>
+                    <div style={{padding: "50px"}}></div>
+                    <LanguageSelector/>
+                </header>
 
-                  <Route exact path="/">
-                    <Redirect to="/POIList" />
-                  </Route>
-                  <Route path="/POIForm"
-                         render={() => <AddPOI isAdmin={isAdmin} buttonFormList={buttonFormList} poisCollection={poisCollection}/>}
-                  />
-                  <Route path="/POIList"
-                         render={() => <POIsList pois={poisCollection} isAdmin={isAdmin} buttonFormList={buttonFormList} poisCollection={poisCollection}/>}
-                  />
-                  <Route path="/POIDetails/:id"
-                         render={routeParams => (<POIDetails selectedPOI={poisCollection.find((poi) => poi.id === routeParams.match.params.id)} isAdmin={isAdmin} buttonFormList={buttonFormList} poisCollection={poisCollection} />)}
-                  />
-                <Route path="/POIEdit/:id"
-                 render={routeParams => (<POIEdit selectedPOI={poisCollection.find((poi) => poi.id === routeParams.match.params.id)}  poisCollection={poisCollection} />)}
+                <Route exact path="/">
+                    <Redirect to="/POIList"/>
+                </Route>
+                <Route path="/POIForm"
+                       render={() => <AddPOI isAdmin={isAdmin} buttonFormList={buttonFormList}
+                                             poisCollection={poisCollection}/>}
                 />
-      </div>
-    </Router>
-  );
+                <Route path="/POIList"
+                       render={() => <POIsList pois={poisCollection} isAdmin={isAdmin} buttonFormList={buttonFormList}
+                                               poisCollection={poisCollection}/>}
+                />
+                <Route path="/POIDetails/:id"
+                       render={routeParams => (<POIDetails
+                           selectedPOI={poisCollection.find((poi) => poi.id === routeParams.match.params.id)}
+                           isAdmin={isAdmin} buttonFormList={buttonFormList} poisCollection={poisCollection}/>)}
+                />
+                <Route path="/POIEdit/:id"
+                       render={routeParams => (
+                           <POIEdit selectedPOI={poisCollection.find((poi) => poi.id === routeParams.match.params.id)}
+                                    poisCollection={poisCollection}/>)}
+                />
+            </div>
+        </Router>
+    );
 }
 
 //return a form that allow to add a new POI to the collection
@@ -186,23 +197,23 @@ class AddPOI extends React.Component {
         }
     }
 
-    emptyPOI = {name: '', description: '', URL: '', coordinate_x: '', coordinate_y: ''} ;
+    emptyPOI = {name: '', description: '', URL: '', coordinate_x: '', coordinate_y: ''};
 
     //detect changes in the fields' form
     //set the newPOI state with the written values
     handleChange = (e) => {
-        const target = e.target ;
-        const name = target.name ;
+        const target = e.target;
+        const name = target.name;
         this.setState(prevState => ({
-            newPOI: { ...prevState.newPOI, [name]: target.value }
+            newPOI: {...prevState.newPOI, [name]: target.value}
         }));
-        console.log(this.state.newPOI) ;
+        console.log(this.state.newPOI);
     }
 
     //add a new POI to the global collection (not user specific collection)
     handleSubmit = async (e) => {
 
-        e.preventDefault() ;
+        e.preventDefault();
 
         const poisCollectionTemp = db.collection(COLLECTION_POIS);
 
@@ -211,22 +222,22 @@ class AddPOI extends React.Component {
                 name: this.state.newPOI.name,
                 description: this.state.newPOI.description,
                 URL: this.state.newPOI.URL,
-                coordinate_x : this.state.currentPosX,
-                coordinate_y : this.state.currentPosY
+                coordinate_x: this.state.currentPosX,
+                coordinate_y: this.state.currentPosY
             });
         } catch (e) {
             console.error("Could not add new POI" + e.message);
         }
-        this.resetNewPOI() ;
+        this.resetNewPOI();
     }
 
     resetNewPOI = () => {
-        this.setState({newPOI : this.emptyPOI}) ;
+        this.setState({newPOI: this.emptyPOI});
     }
 
     handleSetPos = (pos) => {
-        this.setState({ currentPosX: pos.lat });
-        this.setState({ currentPosY: pos.lng });
+        this.setState({currentPosX: pos.lat});
+        this.setState({currentPosY: pos.lng});
     }
 
     render() {
@@ -234,13 +245,15 @@ class AddPOI extends React.Component {
             <div className="map_poi_container">
                 <Map poisCol={this.props.poisCollection} handleSetPos={this.handleSetPos}/>
                 <div>
-                    {this.props.isAdmin  && (
+                    {this.props.isAdmin && (
                         <>
                             {this.props.buttonFormList}
                         </>
                     )}
-                    <FormPOI handleChange={this.handleChange} handleSubmit={this.handleSubmit} name={this.state.newPOI.name} description={this.state.newPOI.description}
-                             coordinate_x={this.state.currentPosX} coordinate_y={this.state.currentPosY} URL={this.state.newPOI.URL}/>
+                    <FormPOI handleChange={this.handleChange} handleSubmit={this.handleSubmit}
+                             name={this.state.newPOI.name} description={this.state.newPOI.description}
+                             coordinate_x={this.state.currentPosX} coordinate_y={this.state.currentPosY}
+                             URL={this.state.newPOI.URL}/>
                 </div>
             </div>
         );
@@ -248,69 +261,71 @@ class AddPOI extends React.Component {
 
 }
 
-class FormInputs extends React.Component{
+class FormInputs extends React.Component {
     constructor(props) {
         super(props);
     }
+
     render() {
         return (
             <>
-                <input type={this.props.type} name={this.props.name} value={this.props.value} onChange={this.props.onChange} placeholder={this.props.placeholder} />
+                <input type={this.props.type} name={this.props.name} value={this.props.value}
+                       onChange={this.props.onChange} placeholder={this.props.placeholder}/>
             </>
         );
     }
 }
 
 //fetch the pois and return the name in a list
-function POIsList(props){
+function POIsList(props) {
 
-   const [selectedPOI, setSelectedPOI] = React.useState(null);
+    const [selectedPOI, setSelectedPOI] = React.useState(null);
 
-   async function handleDelete(id) {
+    async function handleDelete(id) {
 
-       const ref = db.collection(COLLECTION_POIS);
+        const ref = db.collection(COLLECTION_POIS);
 
-       let snapshot = await ref.get();
+        let snapshot = await ref.get();
 
-       for (let doc of snapshot.docs) {
-           try {
+        for (let doc of snapshot.docs) {
+            try {
 
-               if (doc.id == id){
-                   await ref.doc(doc.id).delete();
-               }
+                if (doc.id == id) {
+                    await ref.doc(doc.id).delete();
+                }
 
-           } catch (e) {
-               console.error(`Could not delete document with ID ${doc.id} `);
-               console.error(e);
-           }
-       }
+            } catch (e) {
+                console.error(`Could not delete document with ID ${doc.id} `);
+                console.error(e);
+            }
+        }
     }
 
     const [showQR, setShowQR] = React.useState(false)
     const toggleQR = () => setShowQR(!showQR)
-    return(
+    return (
         <div className="map_poi_container">
             <Map poisCol={props.poisCollection}/>
             <div>
-                {props.isAdmin  && (
+                {props.isAdmin && (
                     <>
                         {props.buttonFormList}
                     </>
                 )}
-                <div >
+                <div>
                     <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
                     <h4>POIs Collection</h4>
                     <ul style={{listStyleType: "none"}}>
                         {props.pois.map((mapItem, index) => (
-                            <li key={index} style={{border:  "1px solid white"}}>
+                            <li key={index} style={{border: "1px solid white"}}>
                                 <Link to={`/POIDetails/${mapItem.id}`} style={{color: "white", textDecoration: "none"}}>
-                                   <div>
-                                       <p>{mapItem.name}</p>
-                                       {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
-                                   </div>
+                                    <div>
+                                        <p>{mapItem.name}</p>
+                                        {showQR ? <QRCode value={mapItem.URL}/> : ''}<br/>
+                                    </div>
                                 </Link>
                                 <button onClick={() => handleDelete(mapItem.id)}>delete</button>
-                                <Link to={`/POIEdit/${mapItem.id}` }>
+                                <Link to={`/POIEdit/${mapItem.id}`}>
                                     <button>Edit</button>
                                 </Link>
                             </li>
@@ -324,23 +339,23 @@ function POIsList(props){
 }
 
 //Useless for now
-class POI extends React.Component{
+class POI extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             id: this.props.id,
-            name : this.props.name,
-            description : this.props.description,
-            coordinate_x : this.props.coordinate_x,
-            coordinate_y : this.props.coordinate_y,
-            URL : this.props.URL,
+            name: this.props.name,
+            description: this.props.description,
+            coordinate_x: this.props.coordinate_x,
+            coordinate_y: this.props.coordinate_y,
+            URL: this.props.URL,
             visited: false
         }
     }
 
     //<POI {...mapItem}>
     render() {
-        return(
+        return (
             <span>{this.state.name}</span>
 
         )
@@ -349,15 +364,15 @@ class POI extends React.Component{
 }
 
 //display the route from a gpx file
-function Map(props){
+function Map(props) {
 
-    let fileReader ;
+    let fileReader;
     const [mapPosition, setMapPosition] = useState([])
 
-    const [currentPosition, setCurrentPosition] = useState([0,0])
+    const [currentPosition, setCurrentPosition] = useState([0, 0])
 
     const handleReading = () => {
-        const text = fileReader.result ;
+        const text = fileReader.result;
         parseFile(text);
     }
 
@@ -381,7 +396,7 @@ function Map(props){
 
     return (
         <>
-        <input type="file" onChange={handleSubmission} />
+            <input type="file" onChange={handleSubmission}/>
             <MapContainer
                 center={[46.307205, 7.631260]}
                 zoom={9}
@@ -389,23 +404,25 @@ function Map(props){
                 style={{width: '700px', height: '500px'}}
                 className="mapping"
             >
-                <TileLayer url="https://wmts20.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg" />
-                {(mapPosition.length &&(
+                <TileLayer
+                    url="https://wmts20.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg"/>
+                {(mapPosition.length && (
                     <Polyline
-                        pathOptions={{ fillColor: 'red', color: 'blue' }}
+                        pathOptions={{fillColor: 'red', color: 'blue'}}
                         positions={mapPosition}
                     />
                 ))}
 
                 {props.poisCol.map((mapItem) => {
                     const pos = {lat: mapItem.coordinate_x, lng: mapItem.coordinate_y};
-                    return(
+                    return (
                         <Marker icon={DefaultIcon} position={pos}>
                             <Popup>
                                 <Link to={`/POIDetails/${mapItem.id}`}>{mapItem.name}</Link>
                             </Popup>
                         </Marker>
-                    )})}
+                    )
+                })}
                 <Route path="/POIForm"
                        render={() => (
                            <>
@@ -430,13 +447,13 @@ function GetPos(props) {
 }
 
 //useless for now
-function FileList(){
+function FileList() {
 
     const [files, setFiles] = useState([])
 
 
-    return(
-        <div >
+    return (
+        <div>
             <h4>File Collection</h4>
             <ul>
                 {files.map((mapItem, index) => (
@@ -451,26 +468,32 @@ function FileList(){
 
 //Allow to edit a POI in the global collection
 //Only for admins
-class POIEdit extends React.Component{
+class POIEdit extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            editablePOI : this.poi
+            editablePOI: this.poi
         }
     }
 
-    poi = {name: this.props.selectedPOI.name, description: this.props.selectedPOI.description, URL: this.props.selectedPOI.URL,
-        coordinate_x: this.props.selectedPOI.coordinate_x, coordinate_y: this.props.selectedPOI.coordinate_y, id: this.props.selectedPOI.id}
+    poi = {
+        name: this.props.selectedPOI.name,
+        description: this.props.selectedPOI.description,
+        URL: this.props.selectedPOI.URL,
+        coordinate_x: this.props.selectedPOI.coordinate_x,
+        coordinate_y: this.props.selectedPOI.coordinate_y,
+        id: this.props.selectedPOI.id
+    }
 
     poisCol = [this.props.selectedPOI];
 
     handleChange = (e) => {
-        const target = e.target ;
-        const name = target.name ;
+        const target = e.target;
+        const name = target.name;
         this.setState(prevState => ({
-            editablePOI: { ...prevState.editablePOI, [name]: target.value }
+            editablePOI: {...prevState.editablePOI, [name]: target.value}
         }));
-        console.log(this.state.editablePOI) ;
+        console.log(this.state.editablePOI);
     }
 
     handleSubmit = async (e) => {
@@ -479,15 +502,16 @@ class POIEdit extends React.Component{
 
         const poiRef = db.collection(COLLECTION_POIS).doc(this.state.editablePOI.id)
 
-        try{
+        try {
             await poiRef.set(
-                {'name': this.state.editablePOI.name,
+                {
+                    'name': this.state.editablePOI.name,
                     'description': this.state.editablePOI.description,
                     'URL': this.state.editablePOI.URL,
                     'coordinate_x': this.state.editablePOI.coordinate_x,
                     'coordinate_y': this.state.editablePOI.coordinate_y
                 })
-        }catch{
+        } catch {
             console.error("Could not update POI" + e.message);
         }
     }
@@ -500,8 +524,10 @@ class POIEdit extends React.Component{
                     <Link to="/POIList">
                         <button style={{width: '120px', height: '50px'}}>back to List</button>
                     </Link>
-                    <FormPOI handleChange={this.handleChange} handleSubmit={this.handleSubmit} name={this.state.editablePOI.name} description={this.state.editablePOI.description}
-                             coordinate_x={this.state.editablePOI.coordinate_x} coordinate_y={this.state.editablePOI.coordinate_y} URL={this.state.editablePOI.URL}/>
+                    <FormPOI handleChange={this.handleChange} handleSubmit={this.handleSubmit}
+                             name={this.state.editablePOI.name} description={this.state.editablePOI.description}
+                             coordinate_x={this.state.editablePOI.coordinate_x}
+                             coordinate_y={this.state.editablePOI.coordinate_y} URL={this.state.editablePOI.URL}/>
                 </div>
 
             </div>
@@ -510,17 +536,22 @@ class POIEdit extends React.Component{
 }
 
 //Form used to add or edit a POI
-function FormPOI(props){
-    return(
+function FormPOI(props) {
+    return (
         <form onSubmit={props.handleSubmit}>
             <br/>
-            <label>Name : <FormInputs type="text" onChange={props.handleChange} name="name"   placeholder="Name" value={props.name}/></label><br/>
-            <label>Description : <FormInputs type="text" onChange={props.handleChange} name="description"  placeholder="Description" value={props.description}/></label><br/>
-            <label>Coordinate X : <FormInputs type="text" onChange={props.handleChange} name="coordinate_x" placeholder="Coordinate x" value={props.coordinate_x}/></label><br/>
-            <label>Coordinate Y : <FormInputs type="text" onChange={props.handleChange} name="coordinate_y"  placeholder="Coordinate y" value={props.coordinate_y}/></label><br/>
-            <label>URL : <FormInputs type="text" onChange={props.handleChange} name="URL"  placeholder="URL" value={props.URL}/></label><br/>
+            <label>Name : <FormInputs type="text" onChange={props.handleChange} name="name" placeholder="Name"
+                                      value={props.name}/></label><br/>
+            <label>Description : <FormInputs type="text" onChange={props.handleChange} name="description"
+                                             placeholder="Description" value={props.description}/></label><br/>
+            <label>Coordinate X : <FormInputs type="text" onChange={props.handleChange} name="coordinate_x"
+                                              placeholder="Coordinate x" value={props.coordinate_x}/></label><br/>
+            <label>Coordinate Y : <FormInputs type="text" onChange={props.handleChange} name="coordinate_y"
+                                              placeholder="Coordinate y" value={props.coordinate_y}/></label><br/>
+            <label>URL : <FormInputs type="text" onChange={props.handleChange} name="URL" placeholder="URL"
+                                     value={props.URL}/></label><br/>
             <input type="submit" value="Submit"/>
-            </form>
+        </form>
     )
 }
 
@@ -534,20 +565,20 @@ function POIDetails(props) {
 
             <Map poisCol={poisCol}/>
             <div>
-                {props.isAdmin  && (
+                {props.isAdmin && (
                     <>
                         {props.buttonFormList}
                     </>
                 )}
                 <div>
-                      <h4>{props.selectedPOI.name}</h4>
-                      <p>{props.selectedPOI.description}</p>
-                      <a href={props.selectedPOI.URL}>
-                          <QRCode value={props.selectedPOI.URL}/>
-                      </a><br/>
-                      <Link to="/POIList">
-                          <button>back to List</button>
-                      </Link>
+                    <h4>{props.selectedPOI.name}</h4>
+                    <p>{props.selectedPOI.description}</p>
+                    <a href={props.selectedPOI.URL}>
+                        <QRCode value={props.selectedPOI.URL}/>
+                    </a><br/>
+                    <Link to="/POIList">
+                        <button>back to List</button>
+                    </Link>
                 </div>
             </div>
         </div>
