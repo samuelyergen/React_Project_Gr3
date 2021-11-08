@@ -38,12 +38,12 @@ function App() {
   //Store an entire collection of POIs in the state
   const [poisCollection, setPoisCollection] = useState([]);
   const [userCollection, setUserCollection] = useState([]);
-  let isUserInDB = false;
+  let isUserInDB = false
+
 
   let handleIsAddForm = () => {
       setIsAddForm((isAddForm) => isAddForm = !isAddForm);
   }
-
 
 
     //formOrList display the list of POIs or
@@ -53,32 +53,38 @@ function App() {
     let formOrList ;
     let buttonFormList ;
 
-    if (isAddForm){
-        buttonFormList =  <Link to="/POIList"><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>Back to list</button></Link>
-    }
-    else{
-        buttonFormList =  <Link to="/POIForm"><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}><Text tid="addPoi"/></button></Link>
-    }
+
+    buttonFormList =  <Link to={isAddForm ? "/POIList" : "/POIForm"}><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>{isAddForm ? "Back to list" : "Add new POI"}</button></Link>
+
 
   useEffect( () => {
+
     //Fetch POIs of your DB
-    const poisCollection = db.collection(COLLECTION_POIS);
+    const poissCollection = db.collection(COLLECTION_POIS);
+
+
     // Subscribe to DB changes
-    const unsubscribe = poisCollection.onSnapshot(
+    const unsubscribe = poissCollection.onSnapshot(
       (snapshot) => {
-        // Store the attributes of all POIs
-          //and add an id attributes to the object
         setPoisCollection(snapshot.docs.map((d) => {
             let data = d.data();
             data['id'] = d.id
             return data
-        }));
+        }))
       },
       (error) => console.error(error)
     );
     // Unsubscribe on unmount
     return () => unsubscribe();
   }, []);
+
+  const sortPOIs = () => {
+      let user = userCollection.find(user => firebase.auth().currentUser.uid === user.id)
+      console.log("user : " + user)
+      let newArray = poisCollection.filter(poi => user.pois.includes(poi.name))
+      console.log("new array : " + newArray)
+      return newArray
+  }
 
   useEffect(() => {
       const myUserCollection = db.collection(COLLECTION_USERS);
@@ -93,6 +99,9 @@ function App() {
             },
             (error) => console.error(error)
         );
+      if(!isAdmin)
+        setPoisCollection(sortPOIs())
+
         return () => unsubscribe();
   }, [])
 
@@ -130,6 +139,7 @@ function App() {
             if(element === currentId) {
                 isUserInDB = true;
             }
+            console.log("DB : " +isUserInDB)
         })
         if (!isUserInDB) {
             try {
