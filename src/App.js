@@ -3,12 +3,11 @@ import "./App.css";
 import {firebase} from "./initFirebase";
 import {useAuth} from "./context/AuthContext";
 import SignIn from "./pages/SignIn";
-import {useEffect, useState} from "react";
-import "leaflet/dist/leaflet.css" ;
-import React from "react";
+import React, {useEffect, useState} from "react";
+import "leaflet/dist/leaflet.css";
 import {Text} from "./context/Language";
 import LanguageSelector from "./components/LanguageSelector";
-import {BrowserRouter as Router, Switch, Route, Link, Redirect} from "react-router-dom";
+import {BrowserRouter as Router, Link, Redirect, Route} from "react-router-dom";
 import POIsList from "./components/POIsList";
 import {AddPOI, POIEdit} from "./components/POIForms"
 import POIDetails from "./components/POIDetails";
@@ -23,7 +22,6 @@ let poiCurrentUser = [];
 
 let CURRENT_USER = null;
 
-
 function App() {
     // Get authenticated state using the custom "auth" hook
     const {isAuthenticated, isAdmin} = useAuth();
@@ -34,81 +32,66 @@ function App() {
     const [userCollection, setUserCollection] = useState([]);
     let isUserInDB = null;
 
-
     let handleIsAddForm = () => {
         setIsAddForm((isAddForm) => isAddForm = !isAddForm);
     }
 
-
-
     //buttonFormList is only for admin and allow
     //to change between the list and the form
-    let buttonFormList ;
+    let buttonFormList;
 
-    buttonFormList =  <Link to={isAddForm ? "/POIList" : "/POIForm"}><button onClick={handleIsAddForm} style={{width : '120px', height : '50px'}}>{isAddForm ? "Back to list" : "Add new POI"}</button></Link>
+    buttonFormList = <Link to={isAddForm ? "/POIList" : "/POIForm"}>
+        <button onClick={handleIsAddForm}
+                style={{width: '120px', height: '50px'}}>{isAddForm ? "Back to list" : "Add new POI"}</button>
+    </Link>
 
-
-  useEffect( () => {
-
-    //Fetch POIs of your DB
-    const poissCollection = db.collection(COLLECTION_POIS);
-
-
-    // Subscribe to DB changes
-    const unsubscribe = poissCollection.onSnapshot(
-      (snapshot) => {
-        setPoisCollection(snapshot.docs.map((d) => {
-            let data = d.data();
-            data['id'] = d.id
-            return data
-        }))
-      },
-      (error) => console.error(error)
-    );
-    // Unsubscribe on unmount
-    return () => unsubscribe();
-  }, []);
-
-  const sortPOIs = () => {
-      // fetch current user
-      CURRENT_USER = userCollection.find(user => firebase.auth().currentUser.uid === user.id)
-      poiCurrentUser = poisCollection.filter(poi => CURRENT_USER.pois.includes(poi.id))
-  }
-
-  useEffect(() => {
-      const myUserCollection = db.collection(COLLECTION_USERS);
-      // Subscribe to DB changes
-      const unsubscribe = myUserCollection.onSnapshot(
-          (snapshot) => {
-              // Store the attributes of all POIs
-              //and add an id attributes to the object
-              setUserCollection(snapshot.docs.map((d) => {
-                  let data = d.data();
-                  data['id'] = d.id
-                  return data
-                }));
-            },
-            (error) => console.error(error)
-        );
-        return () => unsubscribe();
-    }, [])
+    useEffect(() => {
+        if (isAuthenticated) {
+            //Fetch POIs of your DB
+            const poissCollection = db.collection(COLLECTION_POIS);
 
 
-    // WARNING: Only for debugging purposes, this should not be used in a production environment!
-    /*const cleanDB = async () => {
-      const ref = db.collection(COLLECTION_POIS);
-
-      let snapshot = await ref.get();
-
-      for (let doc of snapshot.docs) {
-        try {
-          await ref.doc(doc.id).delete();
-        } catch (e) {
-          console.error(`Could not delete document with ID ${doc.id} `);
-          console.error(e);
+            // Subscribe to DB changes
+            const unsubscribe = poissCollection.onSnapshot(
+                (snapshot) => {
+                    setPoisCollection(snapshot.docs.map((d) => {
+                        let data = d.data();
+                        data['id'] = d.id
+                        return data
+                    }))
+                },
+                (error) => console.error(error)
+            );
+            // Unsubscribe on unmount
+            return () => unsubscribe();
         }
-      }
-    };*/
+    }, [isAuthenticated]);
+
+    const sortPOIs = () => {
+        // fetch current user
+        CURRENT_USER = userCollection.find(user => firebase.auth().currentUser.uid === user.id)
+        poiCurrentUser = poisCollection.filter(poi => CURRENT_USER.pois.includes(poi.id))
+    }
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            const myUserCollection = db.collection(COLLECTION_USERS);
+            // Subscribe to DB changes
+            const unsubscribe = myUserCollection.onSnapshot(
+                (snapshot) => {
+                    // Store the attributes of all POIs
+                    //and add an id attributes to the object
+                    setUserCollection(snapshot.docs.map((d) => {
+                        let data = d.data();
+                        data['id'] = d.id
+                        return data
+                    }));
+                },
+                (error) => console.error(error)
+            );
+            return () => unsubscribe();
+        }
+    }, [isAuthenticated])
 
     // Log out of the application
     const signOut = async () => {
@@ -124,22 +107,24 @@ function App() {
 
     if (isAdmin === false) {
         const currentId = firebase.auth().currentUser.uid;
-       let u = userCollection.map(element => element.id === currentId)
-        if(u.length != 0){
+        let u = userCollection.map(element => element.id === currentId)
+        if (u.length !== 0) {
             u.forEach(element => {
                 if (element) {
                     isUserInDB = true
                 }
             })
-            if(isUserInDB === null)
+            if (isUserInDB === null)
                 isUserInDB = false
         }
-        console.log("u : " + isUserInDB)
         if (isUserInDB === false) {
             try {
                 db.collection(COLLECTION_USERS).doc(firebase.auth().currentUser.uid).set({
-                    name: firebase.auth().currentUser.displayName
+                    name: firebase.auth().currentUser.displayName,
+                    pois: [],
+                    gpxs: []
                 })
+                isUserInDB = true;
             } catch (e) {
                 console.error("Could not add User" + e.message)
             }
@@ -147,7 +132,7 @@ function App() {
     }
 
     let user = userCollection.find(user => firebase.auth().currentUser.uid === user.id)
-    if(isAdmin === false && user != undefined){
+    if (isAdmin === false && user !== undefined) {
         sortPOIs()
     }
     if (isAdmin === true)
@@ -161,7 +146,7 @@ function App() {
                     <h1 className='title'><Text tid="title"/></h1>
                     {isAdmin ? "Admin" : "User"}
                     <button onClick={signOut} className='logoutButton'>Logout</button>
-                    <div style={{padding: "50px"}}></div>
+                    <div style={{padding: "50px"}}/>
                     <LanguageSelector/>
                 </header>
 
@@ -173,8 +158,10 @@ function App() {
                                              poisCollection={poisCollection}/>}
                 />
                 <Route path="/POIList"
-                       render={() => <POIsList pois={isAdmin ? poisCollection : poiCurrentUser} isAdmin={isAdmin} buttonFormList={buttonFormList}
-                                               poisCollection={isAdmin ? poisCollection : poiCurrentUser} isAdmin={isAdmin}/>}
+                       render={() => <POIsList pois={isAdmin ? poisCollection : poiCurrentUser} isAdmin={isAdmin}
+                                               buttonFormList={buttonFormList}
+                                               poisCollection={isAdmin ? poisCollection : poiCurrentUser}/>
+                       }
                 />
                 <Route path="/POIDetails/:id"
                        render={routeParams => (<POIDetails
