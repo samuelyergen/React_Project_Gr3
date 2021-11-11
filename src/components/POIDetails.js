@@ -2,6 +2,7 @@ import Map from "./Map";
 import QRCode from "qrcode.react";
 import {Link, Redirect} from "react-router-dom";
 import React from "react";
+import {Text} from "../context/Language";
 
 //Display information about a selected POI
 function POIDetails(props) {
@@ -24,7 +25,7 @@ function POIDetails(props) {
                             <QRCode value={props.selectedPOI.URL}/>
                         </a><br/>
                         <Link to="/POIList">
-                            <button>back to List</button>
+                            <button><Text tid="backToList"/></button>
                         </Link>
                     </div>
                 </div>
@@ -36,4 +37,5 @@ function POIDetails(props) {
         );
     }
 }
+
 export default POIDetails;

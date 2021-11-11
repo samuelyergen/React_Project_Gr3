@@ -6,6 +6,7 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import L from "leaflet";
 import {firebase} from "../initFirebase";
 import {useAuth} from "../context/AuthContext";
+import {Text} from "../context/Language";
 
 let DefaultIcon = L.icon({
     iconUrl: icon,
@@ -69,7 +70,7 @@ function Map(props) {
             await getFromFirebase.get().then((doc) => {
                 let gpxParsed = [];
                 let gpxData = doc.data().gpxs
-                if(gpxData.length !== 0) {
+                if (gpxData.length !== 0) {
                     gpxData.forEach(data => {
                             let parsedGpx = getGpxParse(data)
                             gpxParsed.push(parsedGpx)
@@ -119,20 +120,21 @@ function Map(props) {
 
     return (
         <>
-            {!isAdmin&&
+            {!isAdmin &&
             <div>
                 <input type="file" onChange={handleSubmission}/>
                 <br/>
                 <button onClick={addRoute}>
-                    addGpx
+                    <Text tid="addGPX"/>
                 </button>
                 <button onClick={cleanGpxOnMap}>
-                    cleanGpx
+                    <Text tid="cleanGPX"/>
                 </button>
                 <br/>
                 <select onChange={e => setGpxSelect(e.target.value)}>
                     {gpxRoute.map((route) => (
-                        <option key={route.metadata.name} value={route.metadata.name}>{route.metadata.time + "/" + route.metadata.name}</option>
+                        <option key={route.metadata.name}
+                                value={route.metadata.name}>{route.metadata.time + "/" + route.metadata.name}</option>
                     ))}
                 </select>
             </div>

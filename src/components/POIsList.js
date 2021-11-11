@@ -3,6 +3,7 @@ import Map from "./Map";
 import {Link} from "react-router-dom";
 import QRCode from "qrcode.react";
 import {firebase} from "../initFirebase";
+import {Text} from "../context/Language";
 
 // Get the DB object from the firebase app
 const db = firebase.firestore();
@@ -47,8 +48,8 @@ function POIsList(props) {
                     </>
                 )}
                 <div id="poisList">
-                    <button onClick={toggleQR}>{showQR ? 'hide QR Codes' : 'show QR Codes'}</button>
-                    <h4>POIs Collection</h4>
+                    <button onClick={toggleQR}>{showQR ? <Text tid="hideQRCodes"/> : <Text tid="showQRCodes"/>}</button>
+                    <h4><Text tid="poisCollection"/></h4>
                     <ul style={{listStyleType: "none"}}>
                         {props.pois.map((mapItem) => (
                             <li key={mapItem.id} style={{border: "1px solid white"}}>
@@ -60,12 +61,11 @@ function POIsList(props) {
                                 </Link>
                                 {props.isAdmin && (
                                     <>
-                                        <button onClick={() => handleDelete(mapItem.id)}>delete</button>
+                                        <button onClick={() => handleDelete(mapItem.id)}><Text tid="deletePoi"/></button>
                                         <Link to={`/POIEdit/${mapItem.id}`}>
-                                            <button>Edit</button>
+                                            <button><Text tid="editPoi"/></button>
                                         </Link>
                                     </>
-
                                 )}
                             </li>
                         ))}
@@ -74,7 +74,6 @@ function POIsList(props) {
             </div>
         </div>
     )
-
 }
 
 export default POIsList;
