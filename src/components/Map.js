@@ -1,11 +1,11 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {MapContainer, Marker, Polyline, Popup, TileLayer, useMapEvents} from "react-leaflet";
 import {Link, Route} from "react-router-dom";
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-import L, {bind} from "leaflet";
-import {useAuth} from "../context/AuthContext";
+import L from "leaflet";
 import {firebase} from "../initFirebase";
+import {useAuth} from "../context/AuthContext";
 
 let DefaultIcon = L.icon({
     iconUrl: icon,
@@ -14,6 +14,7 @@ let DefaultIcon = L.icon({
 
 // Get the DB object from the firebase app
 const db = firebase.firestore();
+const COLLECTION_USERS = "users";
 
 //display the route from a gpx file
 function Map(props) {
@@ -23,16 +24,70 @@ function Map(props) {
 
     const [currentPosition, setCurrentPosition] = useState([0, 0])
 
-    const handleReading = () => {
-        const text = fileReader.result;
-        parseFile(text);
+    const [gpxString, setGpxString] = useState('')
+
+    const [gpxRoute, setGpxRoute] = useState([])
+
+    const {isAdmin} = useAuth();
+
+    useEffect(() => {
+        getGpxRoute();
+    }, []);
+
+    const handleReading = (e) => {
+        const text = e.target.result;
+        parseFile(text)
+        setGpxString(text)
+    }
+
+    const addRoute = async () => {
+        const currentUser = firebase.auth().currentUser
+        const userId = currentUser.uid
+
+        const usersCollection = await db.collection(COLLECTION_USERS).doc(userId)
+        if (gpxString !== ('')) {
+            await usersCollection.update({
+                gpxs: firebase.firestore.FieldValue.arrayUnion(gpxString)
+            })
+            await getGpxRoute();
+        }
+    }
+
+    const getGpxParse = (gpxInString) => {
+        let gpxParser = require('gpxparser');
+        let gpx = new gpxParser();
+        gpx.parse(gpxInString)
+        return gpx;
+    }
+
+    const getGpxRoute = async () => {
+        try {
+            const currentUser = firebase.auth().currentUser;
+            const userId = currentUser.uid;
+
+            const getFromFirebase = db.collection(COLLECTION_USERS).doc(userId);
+            await getFromFirebase.get().then((doc) => {
+                let gpxParsed = [];
+                let gpxData = doc.data().gpxs
+                if(gpxData.length !== 0) {
+                    gpxData.forEach(data => {
+                            let parsedGpx = getGpxParse(data)
+                            gpxParsed.push(parsedGpx)
+                        }
+                    )
+                    setGpxRoute(gpxParsed)
+                }
+            })
+        } catch (e) {
+            console.log(e)
+        }
+
     }
 
     const handleSubmission = (e) => {
         fileReader = new FileReader()
         fileReader.onloadend = handleReading;
         fileReader.readAsText(e.target.files[0])
-
     }
 
     const setPosition = (pos) => {
@@ -41,19 +96,51 @@ function Map(props) {
     }
 
     const parseFile = (content) => {
-        let gpxParser = require('gpxparser');
-        let gpx = new gpxParser();
-        gpx.parse(content)
-        setMapPosition(() => (gpx.tracks[0].points.map(p => [p.lat, p.lon])));
+        let gpx = getGpxParse(content)
+        setGpxPosition(gpx)
+    }
+
+    const setGpxPosition = (route) => {
+        setMapPosition(() => (route.tracks[0].points.map(p => [p.lat, p.lon])));
+    }
+
+    const setGpxSelect = (name) => {
+        let routeX = null;
+        gpxRoute.forEach(route => {
+            if (route.metadata.name === name)
+                routeX = route;
+        })
+        setGpxPosition(routeX)
+    }
+
+    const cleanGpxOnMap = () => {
+        setMapPosition(0)
     }
 
     return (
         <>
-            <input type="file" onChange={handleSubmission}/>
+            {!isAdmin&&
+            <div>
+                <input type="file" onChange={handleSubmission}/>
+                <br/>
+                <button onClick={addRoute}>
+                    addGpx
+                </button>
+                <button onClick={cleanGpxOnMap}>
+                    cleanGpx
+                </button>
+                <br/>
+                <select onChange={e => setGpxSelect(e.target.value)}>
+                    {gpxRoute.map((route) => (
+                        <option key={route.metadata.name} value={route.metadata.name}>{route.metadata.time + "/" + route.metadata.name}</option>
+                    ))}
+                </select>
+            </div>
+            }
             <MapContainer
                 center={[46.307205, 7.631260]}
-                zoom={9}
-                scrollWheelZoom={false}
+                zoom={10}
+                scrollWheelZoom={true}
                 style={{width: '700px', height: '500px'}}
                 className="mapping"
             >
@@ -97,33 +184,6 @@ function GetPos(props) {
         }
     });
     return null;
-}
-
-function FileList(props) {
-
-    const [files, setFiles] = useState([])
-    const {isAuthenticated, isAdmin} = useAuth();
-
-    let files2;
-
-    const myGpxCollection = db.collection("gpxFiles");
-
-    myGpxCollection.onSnapshot(snapshot => {
-        setFiles(snapshot.docs.map(p => {return p.data()}))
-    })
-    return (
-        <div>
-            <h4>File Collection</h4>
-            <ul>
-                {files.map((file) => (
-                    <li >
-                        {file.filename}
-                        <button onClick={() => props.handleSubmission(file.filename)}>show Route</button>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    )
 }
 
 export default Map;
