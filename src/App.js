@@ -18,17 +18,14 @@ const db = firebase.firestore();
 //Reference to a collection of POIs
 const COLLECTION_POIS = "pois";
 const COLLECTION_USERS = "users";
-let poiCurrentUser = [];
 
+let poiCurrentUser = [];
 let CURRENT_USER = null;
 
 function App() {
-    // Get authenticated state using the custom "auth" hook
     const {isAuthenticated, isAdmin} = useAuth();
     const [isAddForm, setIsAddForm] = useState(false);
-    //Store an entire collection of POIs in the state
     const [poisCollection, setPoisCollection] = useState([]);
-    //Collection of the users
     const [userCollection, setUserCollection] = useState([]);
     let isUserInDB = null;
 
@@ -42,7 +39,7 @@ function App() {
 
     buttonFormList = <Link to={isAddForm ? "/POIList" : "/POIForm"}>
         <button onClick={handleIsAddForm}
-                style={{width: '120px', height: '50px'}}>{isAddForm ? "Back to list" : "Add new POI"}</button>
+                style={{width: '120px', height: '50px'}}>{isAddForm ? <Text tid="backToList"/> : <Text tid="addPoi"/>}</button>
     </Link>
 
     useEffect(() => {
@@ -144,8 +141,8 @@ function App() {
             <div className="App">
                 <header>
                     <h1 className='title'><Text tid="title"/></h1>
-                    {isAdmin ? "Admin" : "User"}
-                    <button onClick={signOut} className='logoutButton'>Logout</button>
+                    <Text tid="status"/>{isAdmin ? <Text tid="adminRole"/> : <Text tid="userRole"/>}
+                    <button onClick={signOut} className='logoutButton'><Text tid="logout"/></button>
                     <div style={{padding: "50px"}}/>
                     <LanguageSelector/>
                 </header>

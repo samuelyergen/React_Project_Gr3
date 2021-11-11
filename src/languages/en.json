@@ -1,13 +1,17 @@
 {
-  "login": "login",
-  "logout": "logout",
+  "login": "Login",
+  "logout": "Logout",
   "title": "Welcome to the Pfyn-Finges Forest",
   "addPoi": "Add new POI",
-  "delete": "delete",
-  "showQRCodes": "show QR Codes",
-  "hideQRCodes": "hide QR Codes",
+  "deletePoi": "Delete",
+  "editPoi": "Edit",
+  "showQRCodes": "Show QR Codes",
+  "hideQRCodes": "Hide QR Codes",
   "poisCollection": "POIs Collection",
   "status": "Your role is : ",
-  "adminRole": "administrator",
-  "userRole": "user"
+  "adminRole": "Administrator",
+  "userRole": "User",
+  "addGPX": "Add new GPX",
+  "cleanGPX": "Clean GPX on the map",
+  "backToList": "Back to list"
 }

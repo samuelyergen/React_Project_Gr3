@@ -1,13 +1,17 @@
 {
   "login": "Se connecter",
-  "logout": "Se deconnecter",
-  "title": "Bienvenue au bois de finges",
+  "logout": "Se déconnecter",
+  "title": "Bienvenue au bois de Finges",
   "addPoi": "Ajouter un nouveau POI",
-  "delete": "Supprimer",
-  "showQRCodes": "Afficher les QR Codes",
-  "hideQRCodes": "Cacher les QR Codes",
-  "poisCollection": "Collection de POIs",
-  "status": "Votre role est : ",
-  "adminRole": "administrateur",
-  "userRole": "utilisateur"
+  "deletePoi": "Supprimer",
+  "editPoi": "Modifier",
+  "showQRCodes": "Afficher les codes QR",
+  "hideQRCodes": "Cacher les codes QR",
+  "poisCollection": "Liste des POIs",
+  "status": "Votre rôle est : ",
+  "adminRole": "Administrateur",
+  "userRole": "Utilisateur",
+  "addGPX": "Ajouter une nouvelle GPX",
+  "cleanGPX": "Effacer la GPX sur la map",
+  "backToList": "Retourner a la liste"
 }

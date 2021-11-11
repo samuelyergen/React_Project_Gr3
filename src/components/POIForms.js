@@ -2,6 +2,7 @@ import React from "react";
 import Map from "./Map";
 import {Link} from "react-router-dom";
 import {firebase} from "../initFirebase";
+import {Text} from "../context/Language";
 
 // Get the DB object from the firebase app
 const db = firebase.firestore();
@@ -82,7 +83,6 @@ class AddPOI extends React.Component {
             </div>
         );
     }
-
 }
 
 class FormInputs extends React.Component {
@@ -156,7 +156,7 @@ class POIEdit extends React.Component {
                 <Map poisCol={this.poisCol}/>
                 <div>
                     <Link to="/POIList">
-                        <button style={{width: '120px', height: '50px'}}>back to List</button>
+                        <button style={{width: '120px', height: '50px'}}><Text tid="backToList"/></button>
                     </Link>
                     <FormPOI handleChange={this.handleChange} handleSubmit={this.handleSubmit}
                              name={this.state.editablePOI.name} description={this.state.editablePOI.description}
@@ -184,7 +184,7 @@ function FormPOI(props) {
                                               placeholder="Coordinate y" value={props.coordinate_y}/></label><br/>
             <label>URL : <FormInputs type="text" onChange={props.handleChange} name="URL" placeholder="URL"
                                      value={props.URL}/></label><br/>
-            <input type="submit" value="Submit"/>
+            <input type="submit" value=" ✔ "/>
         </form>
     )
 }
