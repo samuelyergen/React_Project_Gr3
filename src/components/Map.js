@@ -21,14 +21,10 @@ const COLLECTION_USERS = "users";
 function Map(props) {
 
     let fileReader;
-    const [mapPosition, setMapPosition] = useState([])
-
-    const [currentPosition, setCurrentPosition] = useState([0, 0])
-
-    const [gpxString, setGpxString] = useState('')
-
-    const [gpxRoute, setGpxRoute] = useState([])
-
+    const [mapPosition, setMapPosition] = useState([]);
+    const [currentPosition, setCurrentPosition] = useState([0, 0]);
+    const [gpxString, setGpxString] = useState('');
+    const [gpxRoute, setGpxRoute] = useState([]);
     const {isAdmin} = useAuth();
 
     useEffect(() => {
@@ -42,10 +38,10 @@ function Map(props) {
     }
 
     const addRoute = async () => {
-        const currentUser = firebase.auth().currentUser
-        const userId = currentUser.uid
+        const currentUser = firebase.auth().currentUser;
+        const userId = currentUser.uid;
+        const usersCollection = await db.collection(COLLECTION_USERS).doc(userId);
 
-        const usersCollection = await db.collection(COLLECTION_USERS).doc(userId)
         if (gpxString !== ('')) {
             await usersCollection.update({
                 gpxs: firebase.firestore.FieldValue.arrayUnion(gpxString)
@@ -57,7 +53,7 @@ function Map(props) {
     const getGpxParse = (gpxInString) => {
         let gpxParser = require('gpxparser');
         let gpx = new gpxParser();
-        gpx.parse(gpxInString)
+        gpx.parse(gpxInString);
         return gpx;
     }
 
@@ -65,30 +61,28 @@ function Map(props) {
         try {
             const currentUser = firebase.auth().currentUser;
             const userId = currentUser.uid;
-
             const getFromFirebase = db.collection(COLLECTION_USERS).doc(userId);
             await getFromFirebase.get().then((doc) => {
                 let gpxParsed = [];
-                let gpxData = doc.data().gpxs
+                let gpxData = doc.data().gpxs;
                 if (gpxData.length !== 0) {
                     gpxData.forEach(data => {
                             let parsedGpx = getGpxParse(data)
                             gpxParsed.push(parsedGpx)
                         }
-                    )
-                    setGpxRoute(gpxParsed)
+                    );
+                    setGpxRoute(gpxParsed);
                 }
-            })
+            });
         } catch (e) {
             console.log(e)
         }
-
     }
 
     const handleSubmission = (e) => {
-        fileReader = new FileReader()
+        fileReader = new FileReader();
         fileReader.onloadend = handleReading;
-        fileReader.readAsText(e.target.files[0])
+        fileReader.readAsText(e.target.files[0]);
     }
 
     const setPosition = (pos) => {
@@ -97,8 +91,8 @@ function Map(props) {
     }
 
     const parseFile = (content) => {
-        let gpx = getGpxParse(content)
-        setGpxPosition(gpx)
+        let gpx = getGpxParse(content);
+        setGpxPosition(gpx);
     }
 
     const setGpxPosition = (route) => {
@@ -111,11 +105,11 @@ function Map(props) {
             if (route.metadata.name === name)
                 routeX = route;
         })
-        setGpxPosition(routeX)
+        setGpxPosition(routeX);
     }
 
     const cleanGpxOnMap = () => {
-        setMapPosition(0)
+        setMapPosition(0);
     }
 
     return (
