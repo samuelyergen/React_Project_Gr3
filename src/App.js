@@ -36,25 +36,24 @@ function App() {
     //buttonFormList is only for admin and allow
     //to change between the list and the form
     let buttonFormList;
-
     buttonFormList = <Link to={isAddForm ? "/POIList" : "/POIForm"}>
         <button onClick={handleIsAddForm}
-                style={{width: '120px', height: '50px'}}>{isAddForm ? <Text tid="backToList"/> : <Text tid="addPoi"/>}</button>
+                style={{width: '120px', height: '50px'}}>{isAddForm ? <Text tid="backToList"/> :
+            <Text tid="addPoi"/>}</button>
     </Link>
 
+    //Fill the poisCollection with pois from DB
     useEffect(() => {
         if (isAuthenticated) {
             //Fetch POIs of your DB
             const poissCollection = db.collection(COLLECTION_POIS);
-
-
             // Subscribe to DB changes
             const unsubscribe = poissCollection.onSnapshot(
                 (snapshot) => {
                     setPoisCollection(snapshot.docs.map((d) => {
                         let data = d.data();
-                        data['id'] = d.id
-                        return data
+                        data['id'] = d.id;
+                        return data;
                     }))
                 },
                 (error) => console.error(error)
@@ -64,24 +63,24 @@ function App() {
         }
     }, [isAuthenticated]);
 
+    //Get pois for the current user
     const sortPOIs = () => {
         // fetch current user
-        CURRENT_USER = userCollection.find(user => firebase.auth().currentUser.uid === user.id)
-        poiCurrentUser = poisCollection.filter(poi => CURRENT_USER.pois.includes(poi.id))
+        CURRENT_USER = userCollection.find(user => firebase.auth().currentUser.uid === user.id);
+        poiCurrentUser = poisCollection.filter(poi => CURRENT_USER.pois.includes(poi.id));
     }
 
+    //Fill the userCollection with user from DB
     useEffect(() => {
         if (isAuthenticated) {
             const myUserCollection = db.collection(COLLECTION_USERS);
             // Subscribe to DB changes
             const unsubscribe = myUserCollection.onSnapshot(
                 (snapshot) => {
-                    // Store the attributes of all POIs
-                    //and add an id attributes to the object
                     setUserCollection(snapshot.docs.map((d) => {
                         let data = d.data();
-                        data['id'] = d.id
-                        return data
+                        data['id'] = d.id;
+                        return data;
                     }));
                 },
                 (error) => console.error(error)
@@ -102,17 +101,19 @@ function App() {
     // If the user is not authenticated, render the "SignIn" component (Firebase UI)
     if (!isAuthenticated) return <SignIn/>;
 
+    //Check if the user is in the DB
+    // If not he add it we empty array for gpxs and pois
     if (isAdmin === false) {
         const currentId = firebase.auth().currentUser.uid;
-        let u = userCollection.map(element => element.id === currentId)
+        let u = userCollection.map(element => element.id === currentId);
         if (u.length !== 0) {
             u.forEach(element => {
                 if (element) {
-                    isUserInDB = true
+                    isUserInDB = true;
                 }
             })
             if (isUserInDB === null)
-                isUserInDB = false
+                isUserInDB = false;
         }
         if (isUserInDB === false) {
             try {
@@ -120,7 +121,7 @@ function App() {
                     name: firebase.auth().currentUser.displayName,
                     pois: [],
                     gpxs: []
-                })
+                });
                 isUserInDB = true;
             } catch (e) {
                 console.error("Could not add User" + e.message)
@@ -128,12 +129,14 @@ function App() {
         }
     }
 
+    //Before get pois for a user check if the user is not admin and is not undefined
     let user = userCollection.find(user => firebase.auth().currentUser.uid === user.id)
     if (isAdmin === false && user !== undefined) {
-        sortPOIs()
+        sortPOIs();
     }
+    //If your are admin you get all POIs from DB
     if (isAdmin === true)
-        poiCurrentUser = poisCollection
+        poiCurrentUser = poisCollection;
 
     // Normal rendering of the app for authenticated users
     return (

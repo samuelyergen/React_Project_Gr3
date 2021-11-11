@@ -30,7 +30,7 @@ export const AuthProvider = ({children}) => {
                     if (idTokenResult.claims.admin) {
                         setIsAdmin(!!idTokenResult.claims.admin);
                     } else {
-                        setIsAdmin(false)
+                        setIsAdmin(false);
                     }
                 }
             });

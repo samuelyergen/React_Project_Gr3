@@ -6,7 +6,6 @@ import {Text} from "../context/Language";
 
 // Get the DB object from the firebase app
 const db = firebase.firestore();
-
 //Reference to a collection of POIs
 const COLLECTION_POIS = "pois";
 
@@ -37,9 +36,7 @@ class AddPOI extends React.Component {
 
     //add a new POI to the global collection (not user specific collection)
     handleSubmit = async (e) => {
-
         e.preventDefault();
-
         const poisCollectionTemp = db.collection(COLLECTION_POIS);
 
         try {
@@ -131,10 +128,8 @@ class POIEdit extends React.Component {
     }
 
     handleSubmit = async (e) => {
-
         e.preventDefault();
-
-        const poiRef = db.collection(COLLECTION_POIS).doc(this.state.editablePOI.id)
+        const poiRef = db.collection(COLLECTION_POIS).doc(this.state.editablePOI.id);
 
         try {
             await poiRef.set(
@@ -186,7 +181,7 @@ function FormPOI(props) {
                                      value={props.URL}/></label><br/>
             <input type="submit" value=" ✔ "/>
         </form>
-    )
+    );
 }
 
 export {AddPOI, POIEdit}
